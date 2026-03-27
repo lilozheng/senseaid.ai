@@ -1,13 +1,15 @@
+Here is the updated HTML code with persistent microphone access that always allows use of the microphone without repeated permission requests:
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>SenseAid - AR Smart Glasses | Clean Demo Mode</title>
+    <title>SenseAid - AR Smart Glasses | Persistent Microphone Access</title>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
     <style>
         /* ============================================
-           PREMIUM GLASSES INTERFACE - CLEAN DEMO MODE
+           PREMIUM GLASSES INTERFACE - PERSISTENT MIC
            ============================================ */
         :root {
             --glass-primary: rgba(255, 255, 255, 0.08);
@@ -18,7 +20,6 @@
             --neon-green: #6eff9e;
             --neon-red: #ff6b6b;
             --neon-orange: #ffb347;
-            --neon-purple: #c084fc;
             --bg-gradient-start: #0a0f1a;
             --bg-gradient-end: #0c1220;
             --spacing-xs: 0.5rem;
@@ -43,7 +44,6 @@
             width: 100vw;
         }
 
-        /* Main AR Viewport - Full Screen */
         .ar-viewport {
             position: relative;
             width: 100%;
@@ -52,7 +52,6 @@
             background: #000;
         }
 
-        /* Camera View - Full Screen */
         #videoElement {
             position: absolute;
             top: 0;
@@ -97,7 +96,6 @@
             50% { opacity: 0.6; transform: scale(1.05); }
         }
 
-        /* Glasses Frame Overlay - Minimal & Transparent */
         .glasses-frame {
             position: absolute;
             top: 0;
@@ -108,7 +106,6 @@
             pointer-events: none;
         }
 
-        /* Lens Effect - Subtle Glass Reflection */
         .lens-reflection {
             position: absolute;
             top: 8%;
@@ -122,7 +119,6 @@
             pointer-events: none;
         }
 
-        /* Frame Structure - Sleek & Modern */
         .frame-bridge {
             position: absolute;
             top: 25%;
@@ -159,7 +155,6 @@
             transform: rotate(15deg);
         }
 
-        /* LED Indicators - Subtle */
         .led-strip {
             position: absolute;
             display: flex;
@@ -187,7 +182,6 @@
             border-radius: 50%;
             background: rgba(100, 100, 120, 0.4);
             transition: all 0.2s var(--transition-smooth);
-            box-shadow: 0 0 4px rgba(0, 0, 0, 0.3);
         }
 
         .led-active {
@@ -199,7 +193,6 @@
             50% { opacity: 1; box-shadow: 0 0 16px currentColor; }
         }
 
-        /* Gentle Toast Notification - WHITE BACKGROUND */
         .gentle-toast {
             position: fixed;
             bottom: 100px;
@@ -246,7 +239,6 @@
         }
         .gentle-toast-close:hover { background: rgba(0, 0, 0, 0.1); transform: scale(1.05); }
 
-        /* HUD Cards - Floating */
         .hud-display {
             position: absolute;
             top: var(--spacing-lg);
@@ -283,7 +275,6 @@
         .hud-confidence-fill { height: 100%; border-radius: 2px; transition: width 0.3s ease; }
         .hud-direction { font-size: 1.2rem; opacity: 0.6; }
 
-        /* Directional Indicators */
         .directional-ring {
             position: absolute;
             top: 50%;
@@ -311,7 +302,6 @@
         .direction-marker.w { left: -20px; top: 50%; transform: translateY(-50%); }
         .direction-marker.c { top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 2rem; }
 
-        /* Audio Visualizer - Minimal */
         .audio-visualizer {
             position: absolute;
             bottom: 100px;
@@ -332,27 +322,122 @@
             position: absolute;
             bottom: 100px;
             right: 20px;
-            width: 280px;
-            background: rgba(255, 255, 255, 0.98);
-            backdrop-filter: blur(16px);
+            width: 340px;
+            background: white;
             border-radius: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
             overflow: hidden;
             z-index: 50;
             pointer-events: auto;
-            box-shadow: 0 4px 20px rgba(255, 254, 254, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(0, 0, 0, 0.08);
         }
-        .transcript-header { padding: 12px 16px; background: rgba(255, 255, 255, 0.02); border-bottom: 1px solid rgba(0, 0, 0, 0.08); display: flex; justify-content: space-between; align-items: center; }
-        .transcript-title { font-size: 0.85rem; font-weight: 500; display: flex; align-items: center; gap: 6px; color: #1a1a2e; }
-        .transcript-status { font-size: 0.7rem; padding: 2px 8px; border-radius: 20px; background: rgba(255, 255, 255, 0.15); color: #ffffff; }
-        .transcript-content { max-height: 200px; overflow-y: auto; padding: 8px; }
-        .transcript-item { background: rgba(255, 255, 255, 0.03); border-radius: 12px; padding: 8px 12px; margin-bottom: 6px; animation: fadeSlideUp 0.3s ease; }
-        @keyframes fadeSlideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .transcript-text { font-size: 0.8rem; line-height: 1.4; color: #2a2a3a; }
-        .transcript-meta { font-size: 0.65rem; opacity: 0.5; margin-top: 4px; display: flex; justify-content: space-between; color: #6a6a7a; }
-        .transcript-empty { text-align: center; padding: 20px; opacity: 0.5; font-size: 0.8rem; color: #8a8a9a; }
+        .transcript-header { 
+            padding: 14px 16px; 
+            background: #f8f9fa; 
+            border-bottom: 1px solid #e9ecef; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+        }
+        .transcript-title { 
+            font-size: 0.9rem; 
+            font-weight: 600; 
+            display: flex; 
+            align-items: center; 
+            gap: 6px; 
+            color: #2c3e50; 
+        }
+        .transcript-status { 
+            font-size: 0.7rem; 
+            padding: 4px 12px; 
+            border-radius: 20px; 
+            background: #e8f5e9; 
+            color: #2e7d32; 
+            font-weight: 500;
+        }
+        .transcript-status.listening { background: #fff3e0; color: #ed6c02; animation: pulseStatus 1s infinite; }
+        .transcript-status.active { background: #e8f5e9; color: #2e7d32; }
+        .transcript-status.mic-active { background: #e3f2fd; color: #1976d2; }
+        @keyframes pulseStatus {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+        .transcript-content { 
+            max-height: 300px; 
+            overflow-y: auto; 
+            padding: 12px;
+            background: white;
+        }
+        .transcript-item { 
+            background: #f8f9fa; 
+            border-radius: 12px; 
+            padding: 12px; 
+            margin-bottom: 8px; 
+            animation: fadeSlideUp 0.3s ease;
+            border-left: 3px solid #4caf50;
+        }
+        .transcript-item.interim {
+            border-left-color: #ff9800;
+            background: #fff8e7;
+        }
+        @keyframes fadeSlideUp { 
+            from { opacity: 0; transform: translateY(10px); } 
+            to { opacity: 1; transform: translateY(0); } 
+        }
+        .transcript-text { 
+            font-size: 0.9rem; 
+            line-height: 1.4; 
+            color: #1a1a2e;
+            font-weight: 500;
+        }
+        .transcript-meta { 
+            font-size: 0.65rem; 
+            opacity: 0.6; 
+            margin-top: 6px; 
+            display: flex; 
+            justify-content: space-between; 
+            color: #6c757d; 
+        }
+        .transcript-empty { 
+            text-align: center; 
+            padding: 32px 20px; 
+            opacity: 0.6; 
+            font-size: 0.8rem; 
+            color: #6c757d;
+        }
 
-        /* FOLDABLE CONTROL PANEL - COLLAPSED BY DEFAULT */
+        /* Mic Status Indicator */
+        .mic-status-indicator {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(8px);
+            padding: 6px 12px;
+            border-radius: 40px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            z-index: 46;
+            font-size: 0.7rem;
+            pointer-events: none;
+        }
+        .mic-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ff6b6b;
+            transition: all 0.2s;
+        }
+        .mic-dot.active {
+            background: #4caf50;
+            animation: micPulse 1s infinite;
+        }
+        @keyframes micPulse {
+            0%, 100% { opacity: 0.5; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.2); }
+        }
+
         .control-panel {
             position: fixed;
             bottom: 0;
@@ -365,15 +450,11 @@
             z-index: 200;
             pointer-events: auto;
             transition: transform 0.4s var(--transition-smooth);
-            transform: translateY(calc(100% - 56px)); /* COLLAPSED BY DEFAULT */
+            transform: translateY(calc(100% - 56px));
         }
 
-        /* Expanded state */
-        .control-panel.expanded {
-            transform: translateY(0);
-        }
+        .control-panel.expanded { transform: translateY(0); }
 
-        /* Handle bar for expanding/collapsing */
         .control-panel-handle {
             width: 100%;
             display: flex;
@@ -385,9 +466,7 @@
             transition: all 0.2s;
         }
 
-        .control-panel-handle:hover {
-            background: rgba(95, 158, 255, 0.1);
-        }
+        .control-panel-handle:hover { background: rgba(95, 158, 255, 0.1); }
 
         .handle-bar {
             width: 48px;
@@ -397,11 +476,8 @@
             transition: all 0.2s;
         }
 
-        .control-panel.expanded .handle-bar {
-            background: var(--neon-blue);
-        }
+        .control-panel.expanded .handle-bar { background: var(--neon-blue); }
 
-        /* Panel header with title and toggle button */
         .control-panel-header {
             display: flex;
             justify-content: space-between;
@@ -420,10 +496,6 @@
             color: white;
         }
 
-        .control-panel-title span {
-            font-size: 1rem;
-        }
-
         .control-panel-toggle {
             font-size: 1rem;
             transition: transform 0.3s var(--transition-smooth);
@@ -438,11 +510,8 @@
             color: white;
         }
 
-        .control-panel.expanded .control-panel-toggle {
-            transform: rotate(180deg);
-        }
+        .control-panel.expanded .control-panel-toggle { transform: rotate(180deg); }
 
-        /* Panel content - hidden when collapsed */
         .control-panel-content {
             padding: 0 24px 24px 24px;
             display: grid;
@@ -452,22 +521,7 @@
             overflow-y: auto;
         }
 
-        .control-panel:not(.expanded) .control-panel-content {
-            display: none;
-        }
-
-        /* Scrollbar for content */
-        .control-panel-content::-webkit-scrollbar {
-            width: 4px;
-        }
-        .control-panel-content::-webkit-scrollbar-track {
-            background: rgba(255,255,255,0.05);
-            border-radius: 4px;
-        }
-        .control-panel-content::-webkit-scrollbar-thumb {
-            background: var(--neon-blue);
-            border-radius: 4px;
-        }
+        .control-panel:not(.expanded) .control-panel-content { display: none; }
 
         .control-section {
             display: flex;
@@ -541,7 +595,6 @@
             color: white;
         }
 
-        /* Haptic Overlay */
         .haptic-overlay {
             position: absolute;
             top: 0;
@@ -558,7 +611,6 @@
             100% { background: radial-gradient(circle, rgba(95, 158, 255, 0) 0%, transparent 70%); opacity: 0; }
         }
 
-        /* Demo instruction badge */
         .demo-badge {
             position: absolute;
             bottom: 20px;
@@ -576,15 +628,12 @@
             font-weight: 500;
         }
 
-        /* Mobile Responsive */
         @media (max-width: 768px) {
             .hud-display { top: 12px; right: 12px; max-width: 260px; }
-            .transcript-panel { width: 240px; bottom: 100px; right: 12px; }
+            .transcript-panel { width: 280px; bottom: 100px; right: 12px; }
             .gentle-toast { bottom: 90px; padding: 10px 18px; }
-            .gentle-toast-icon { font-size: 22px; }
-            .control-panel-content { grid-template-columns: 1fr; max-height: 320px; padding: 0 16px 20px 16px; }
-            .control-panel-header { padding: 0 16px 8px 16px; }
-            .demo-badge { font-size: 0.6rem; bottom: 16px; white-space: nowrap; }
+            .control-panel-content { grid-template-columns: 1fr; max-height: 320px; }
+            .demo-badge { font-size: 0.6rem; white-space: nowrap; }
         }
     </style>
 </head>
@@ -596,14 +645,11 @@
             <p>Enable Camera & Microphone</p>
         </div>
         
-        <!-- Glasses Frame Overlay -->
         <div class="glasses-frame">
             <div class="lens-reflection"></div>
             <div class="frame-bridge"></div>
             <div class="frame-temple-left"></div>
             <div class="frame-temple-right"></div>
-            
-            <!-- LED Indicators -->
             <div class="led-strip led-strip-top" id="ledStripTop">
                 <div class="led"></div><div class="led"></div><div class="led"></div><div class="led"></div><div class="led"></div>
             </div>
@@ -612,7 +658,6 @@
             </div>
         </div>
 
-        <!-- Directional Ring -->
         <div class="directional-ring">
             <div class="direction-marker n" id="dirN">⬆️</div>
             <div class="direction-marker s" id="dirS">⬇️</div>
@@ -621,44 +666,42 @@
             <div class="direction-marker c" id="dirC">🔍</div>
         </div>
 
-        <!-- HUD Display -->
         <div class="hud-display" id="hudDisplay"></div>
-        
-        <!-- Haptic Overlay -->
         <div class="haptic-overlay" id="hapticOverlay"></div>
         
-        <!-- Audio Visualizer -->
         <div class="audio-visualizer" id="audioVisualizer">
             <div class="audio-bar"></div><div class="audio-bar"></div><div class="audio-bar"></div>
             <div class="audio-bar"></div><div class="audio-bar"></div><div class="audio-bar"></div>
             <div class="audio-bar"></div><div class="audio-bar"></div><div class="audio-bar"></div>
         </div>
 
-        <!-- Transcript Panel - WHITE BACKGROUND -->
+        <!-- Transcript Panel -->
         <div class="transcript-panel" id="transcriptPanel">
             <div class="transcript-header">
-                <div class="transcript-title">💬 Speech Transcript</div>
+                <div class="transcript-title">🎤 Speech Transcript</div>
                 <div class="transcript-status" id="transcriptStatus">Ready</div>
             </div>
             <div class="transcript-content" id="transcriptContent">
-                <div class="transcript-empty">🎤 Speak to see transcript</div>
+                <div class="transcript-empty">🎤 Microphone active - start speaking...</div>
             </div>
         </div>
 
-        <!-- Demo Instruction Badge -->
-        <div class="demo-badge" id="demoBadge">
-            👓 SenseAid | Tap handle to expand controls
+        <!-- Mic Status Indicator -->
+        <div class="mic-status-indicator" id="micStatus">
+            <div class="mic-dot" id="micDot"></div>
+            <span id="micStatusText">Mic: Ready</span>
         </div>
 
-        <!-- FOLDABLE CONTROL PANEL - COLLAPSED BY DEFAULT -->
+        <div class="demo-badge" id="demoBadge">
+            🎤 Always-on Mic | Tap handle for controls
+        </div>
+
         <div class="control-panel" id="controlPanel">
             <div class="control-panel-handle" id="panelHandle">
                 <div class="handle-bar"></div>
             </div>
             <div class="control-panel-header" id="panelHeader">
-                <div class="control-panel-title">
-                    <span>⚡</span> SenseAid Controls
-                </div>
+                <div class="control-panel-title"><span>⚡</span> SenseAid Controls</div>
                 <div class="control-panel-toggle" id="panelToggle">▲</div>
             </div>
             <div class="control-panel-content">
@@ -666,6 +709,7 @@
                     <div class="control-label">Video & Audio</div>
                     <button class="control-button" id="btnWebcam">🎥 Enable Camera</button>
                     <button class="control-button" id="btnStopVideo">⏹️ Stop Camera</button>
+                    <button class="control-button" id="btnMicOnly">🎤 Mic Only Mode</button>
                 </div>
                 <div class="control-section">
                     <div class="control-label">Environment</div>
@@ -683,6 +727,7 @@
                 <div class="control-section">
                     <div class="control-label">Test</div>
                     <button class="control-button" id="btnRandom">🎲 Test Sound</button>
+                    <button class="control-button" id="btnTestMic">🎤 Test Speech</button>
                 </div>
                 <div class="control-section">
                     <div class="control-label">Statistics</div>
@@ -717,15 +762,21 @@
         const transcriptContent = document.getElementById('transcriptContent');
         const transcriptStatus = document.getElementById('transcriptStatus');
         const controlPanel = document.getElementById('controlPanel');
-        const demoBadge = document.getElementById('demoBadge');
+        const micDot = document.getElementById('micDot');
+        const micStatusText = document.getElementById('micStatusText');
         
         let audioContext = null, analyser = null, mediaStream = null;
         let isDetecting = false, lastAlertTime = 0, alertDebounce = 1000;
         let stats = { total: 0, uniqueSounds: new Set(), speechCount: 0, confidenceSum: 0 };
-        let sensitivity = 75, currentEnvironment = 'urban';
+        let sensitivity = 75;
         let activeToast = null;
 
-        // Statistics Updates
+        // Speech Recognition - Persistent
+        let speechRecognition = null;
+        let isSpeechActive = false;
+        let interimElement = null;
+        let speechRestartTimer = null;
+
         function updateStatsUI() {
             document.getElementById('statDetections').textContent = stats.total;
             document.getElementById('statSounds').textContent = stats.uniqueSounds.size;
@@ -734,7 +785,191 @@
             document.getElementById('statAvgConfidence').textContent = `${avg}%`;
         }
 
-        // Gentle Toast Notification - White Background
+        function updateMicStatus(active, text) {
+            if (active) {
+                micDot.classList.add('active');
+                micStatusText.textContent = text;
+                micStatusText.style.color = '#4caf50';
+            } else {
+                micDot.classList.remove('active');
+                micStatusText.textContent = text;
+                micStatusText.style.color = '#ff6b6b';
+            }
+        }
+
+        function addTranscript(text, confidence, isInterim = false) {
+            const empty = transcriptContent.querySelector('.transcript-empty');
+            if (empty && !isInterim) empty.remove();
+            
+            if (isInterim) {
+                if (!interimElement) {
+                    interimElement = document.createElement('div');
+                    interimElement.className = 'transcript-item interim';
+                    transcriptContent.insertBefore(interimElement, transcriptContent.firstChild);
+                }
+                interimElement.innerHTML = `
+                    <div class="transcript-text">🎤 "${text}" <span style="opacity:0.6; font-size:0.7rem;">(listening...)</span></div>
+                    <div class="transcript-meta"><span>${new Date().toLocaleTimeString()}</span><span>interim</span></div>
+                `;
+                transcriptStatus.textContent = 'Listening...';
+                transcriptStatus.className = 'transcript-status listening';
+                updateMicStatus(true, 'Listening...');
+            } else {
+                if (interimElement) {
+                    interimElement.remove();
+                    interimElement = null;
+                }
+                
+                const item = document.createElement('div');
+                item.className = 'transcript-item';
+                item.innerHTML = `
+                    <div class="transcript-text">“${text}”</div>
+                    <div class="transcript-meta"><span>${new Date().toLocaleTimeString()}</span><span>✓ ${Math.round(confidence * 100)}%</span></div>
+                `;
+                transcriptContent.insertBefore(item, transcriptContent.firstChild);
+                
+                const items = transcriptContent.querySelectorAll('.transcript-item:not(.interim)');
+                if (items.length > 8) items[items.length-1].remove();
+                
+                transcriptStatus.textContent = 'Active';
+                transcriptStatus.className = 'transcript-status active';
+                updateMicStatus(true, 'Active');
+                
+                if (Date.now() - lastAlertTime > 1200) {
+                    const personSound = SoundDatabase.find(s => s.id === 'person_calling');
+                    const dir = ['left', 'right', 'center'][Math.floor(Math.random() * 3)];
+                    showGentleToast(personSound, confidence * 100, dir);
+                    activateLEDs(personSound);
+                    showDirectionIndicator(dir);
+                    addHUDCard(personSound, confidence * 100, dir);
+                    stats.total++;
+                    stats.uniqueSounds.add('Person Calling');
+                    stats.speechCount++;
+                    stats.confidenceSum += confidence * 100;
+                    updateStatsUI();
+                    lastAlertTime = Date.now();
+                }
+                
+                console.log(`🎤 TRANSCRIPT: "${text}" (${Math.round(confidence*100)}%)`);
+            }
+        }
+
+        // Initialize Speech Recognition with auto-restart
+        function initSpeechRecognition() {
+            const SpeechAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechAPI) {
+                transcriptStatus.textContent = 'Not supported';
+                updateMicStatus(false, 'Not supported');
+                return false;
+            }
+            
+            speechRecognition = new SpeechAPI();
+            speechRecognition.continuous = true;
+            speechRecognition.interimResults = true;
+            speechRecognition.lang = 'en-US';
+            speechRecognition.maxAlternatives = 1;
+            
+            speechRecognition.onstart = () => {
+                isSpeechActive = true;
+                console.log('🎤 Speech recognition ACTIVE - microphone always on');
+                transcriptStatus.textContent = 'Listening...';
+                transcriptStatus.className = 'transcript-status listening';
+                updateMicStatus(true, 'Active - Speak now');
+            };
+            
+            speechRecognition.onresult = (event) => {
+                let finalTranscript = '';
+                let interimTranscript = '';
+                
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    const transcript = event.results[i][0].transcript;
+                    if (event.results[i].isFinal) {
+                        finalTranscript += transcript;
+                    } else {
+                        interimTranscript += transcript;
+                    }
+                }
+                
+                if (interimTranscript) {
+                    addTranscript(interimTranscript, 0, true);
+                }
+                
+                if (finalTranscript) {
+                    const confidence = event.results[event.resultIndex][0].confidence || 0.85;
+                    addTranscript(finalTranscript, confidence, false);
+                }
+            };
+            
+            speechRecognition.onerror = (event) => {
+                console.warn('Speech error:', event.error);
+                if (event.error === 'not-allowed') {
+                    transcriptStatus.textContent = 'Mic blocked';
+                    updateMicStatus(false, 'Blocked - allow mic');
+                } else if (event.error === 'no-speech') {
+                    // Normal - keep listening
+                } else if (event.error === 'network') {
+                    updateMicStatus(false, 'Network error');
+                }
+            };
+            
+            speechRecognition.onend = () => {
+                console.log('Speech recognition ended, auto-restarting in 1 second...');
+                isSpeechActive = false;
+                if (interimElement) {
+                    interimElement.remove();
+                    interimElement = null;
+                }
+                
+                // AUTO-RESTART - Always keep microphone active
+                if (mediaStream) {
+                    if (speechRestartTimer) clearTimeout(speechRestartTimer);
+                    speechRestartTimer = setTimeout(() => {
+                        try {
+                            speechRecognition?.start();
+                            console.log('Speech recognition auto-restarted');
+                            updateMicStatus(true, 'Reconnecting...');
+                        } catch(e) {
+                            console.warn('Auto-restart failed:', e);
+                            updateMicStatus(false, 'Reconnect failed');
+                        }
+                    }, 1000);
+                } else {
+                    transcriptStatus.textContent = 'Ready';
+                    transcriptStatus.className = 'transcript-status';
+                    updateMicStatus(false, 'No mic stream');
+                }
+            };
+            
+            return true;
+        }
+
+        function startSpeechRecognition() {
+            if (!speechRecognition) {
+                if (!initSpeechRecognition()) return;
+            }
+            if (isSpeechActive) return;
+            try {
+                speechRecognition.start();
+                console.log('Speech recognition started - microphone always listening');
+                updateMicStatus(true, 'Active');
+            } catch(e) {
+                console.warn('Start failed:', e);
+                // Retry after short delay
+                setTimeout(() => {
+                    try { speechRecognition?.start(); } catch(e2) {}
+                }, 500);
+            }
+        }
+
+        function stopSpeechRecognition() {
+            if (speechRestartTimer) clearTimeout(speechRestartTimer);
+            if (speechRecognition && isSpeechActive) {
+                try { speechRecognition.stop(); } catch(e) {}
+            }
+            isSpeechActive = false;
+            updateMicStatus(false, 'Stopped');
+        }
+
         function showGentleToast(sound, confidence, direction) {
             if (activeToast) activeToast.remove();
             
@@ -777,7 +1012,6 @@
             setTimeout(() => hapticOverlay.classList.remove('haptic-active'), 200);
         }
 
-        // LED Activation
         function activateLEDs(sound) {
             const color = sound.color;
             [...ledTop, ...ledBottom].forEach(led => {
@@ -796,7 +1030,6 @@
             }, 3000);
         }
 
-        // Direction Indicator
         function showDirectionIndicator(direction) {
             const dirMap = { left: 'dirW', right: 'dirE', up: 'dirN', down: 'dirS', center: 'dirC' };
             const dirElement = document.getElementById(dirMap[direction]);
@@ -806,7 +1039,6 @@
             }
         }
 
-        // HUD Card
         function addHUDCard(sound, confidence, direction) {
             const cards = hudDisplay.querySelectorAll('.hud-card');
             if (cards.length >= 3) cards[cards.length - 1].remove();
@@ -826,7 +1058,6 @@
             setTimeout(() => card.remove(), 4000);
         }
 
-        // Sound Analysis
         async function analyzeSound() {
             if (!analyser || !isDetecting) return;
             
@@ -845,7 +1076,6 @@
             for (let i = 0; i < dataArray.length; i++) sum += dataArray[i];
             const amplitude = sum / dataArray.length / 255;
             
-            // Update visualizer
             const bars = document.querySelectorAll('.audio-bar');
             const normAmp = Math.min(1, amplitude * 2);
             bars.forEach((bar, i) => {
@@ -868,7 +1098,7 @@
             
             if (bestMatch && Date.now() - lastAlertTime > alertDebounce) {
                 const confidence = 55 + bestScore * 40;
-                const directions = ['left', 'right', 'center', 'left', 'right', 'center', 'up', 'down'];
+                const directions = ['left', 'right', 'center', 'left', 'right', 'center'];
                 const direction = directions[Math.floor(Math.random() * directions.length)];
                 
                 lastAlertTime = Date.now();
@@ -882,64 +1112,12 @@
                 stats.confidenceSum += confidence;
                 updateStatsUI();
                 
-                // Flash demo badge to indicate detection
-                demoBadge.style.background = `rgba(95, 158, 255, 0.8)`;
-                setTimeout(() => demoBadge.style.background = 'rgba(0, 0, 0, 0.6)', 500);
+                const badge = document.getElementById('demoBadge');
+                badge.style.background = `rgba(95, 158, 255, 0.8)`;
+                setTimeout(() => badge.style.background = 'rgba(0, 0, 0, 0.6)', 500);
             }
         }
 
-        // Speech Recognition
-        let speechRecognition = null;
-        function initSpeech() {
-            const SpeechAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
-            if (!SpeechAPI) { transcriptStatus.textContent = 'Not supported'; return false; }
-            
-            speechRecognition = new SpeechAPI();
-            speechRecognition.continuous = true;
-            speechRecognition.interimResults = true;
-            speechRecognition.lang = 'en-US';
-            
-            speechRecognition.onstart = () => { transcriptStatus.textContent = 'Listening'; };
-            speechRecognition.onresult = (e) => {
-                let finalText = '';
-                for (let i = e.resultIndex; i < e.results.length; i++) {
-                    if (e.results[i].isFinal) finalText += e.results[i][0].transcript;
-                }
-                if (finalText) {
-                    const confidence = e.results[e.resultIndex][0].confidence || 0.85;
-                    const personSound = SoundDatabase.find(s => s.id === 'person_calling');
-                    
-                    const empty = transcriptContent.querySelector('.transcript-empty');
-                    if (empty) empty.remove();
-                    
-                    const item = document.createElement('div');
-                    item.className = 'transcript-item';
-                    item.innerHTML = `<div class="transcript-text">“${finalText}”</div>
-                        <div class="transcript-meta"><span>${new Date().toLocaleTimeString()}</span><span>✓ ${Math.round(confidence*100)}%</span></div>`;
-                    transcriptContent.insertBefore(item, transcriptContent.firstChild);
-                    
-                    const items = transcriptContent.querySelectorAll('.transcript-item');
-                    if (items.length > 6) items[items.length-1].remove();
-                    
-                    if (Date.now() - lastAlertTime > 1200) {
-                        const dir = ['left', 'right', 'center'][Math.floor(Math.random() * 3)];
-                        showGentleToast(personSound, confidence * 100, dir);
-                        activateLEDs(personSound);
-                        showDirectionIndicator(dir);
-                        addHUDCard(personSound, confidence * 100, dir);
-                        stats.total++; stats.uniqueSounds.add('Person Calling'); stats.speechCount++;
-                        stats.confidenceSum += confidence * 100;
-                        updateStatsUI();
-                        lastAlertTime = Date.now();
-                    }
-                }
-            };
-            speechRecognition.onerror = (e) => { if (e.error !== 'no-speech') console.warn(e.error); };
-            speechRecognition.onend = () => { if (isDetecting) setTimeout(() => speechRecognition?.start(), 300); };
-            return true;
-        }
-
-        // Audio Setup
         async function setupAudio(stream) {
             if (audioContext) await audioContext.close();
             audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -953,13 +1131,21 @@
             function loop() { if (isDetecting) { analyzeSound(); requestAnimationFrame(loop); } }
             loop();
             
-            if (speechRecognition) try { speechRecognition.start(); } catch(e) {}
+            // Auto-start speech recognition
+            startSpeechRecognition();
+            
             transcriptStatus.textContent = 'Active';
+            transcriptStatus.className = 'transcript-status active';
+            updateMicStatus(true, 'Always listening');
         }
 
         async function startCamera() {
             try {
-                if (mediaStream) mediaStream.getTracks().forEach(t => t.stop());
+                if (mediaStream) {
+                    mediaStream.getTracks().forEach(t => t.stop());
+                    stopSpeechRecognition();
+                }
+                
                 const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
                 const video = document.getElementById('videoElement');
                 video.srcObject = stream;
@@ -968,28 +1154,66 @@
                 mediaStream = stream;
                 await setupAudio(stream);
                 
-                // Update demo badge
-                demoBadge.innerHTML = '✅ SenseAid Active | Tap handle for controls';
-                demoBadge.style.background = 'rgba(0, 255, 159, 0.3)';
-                setTimeout(() => demoBadge.style.background = 'rgba(0, 0, 0, 0.6)', 2000);
-            } catch(e) { alert('Please allow camera & microphone access'); }
+                const badge = document.getElementById('demoBadge');
+                badge.innerHTML = '🎤 Always-on Mic Active | Speak into microphone!';
+                badge.style.background = 'rgba(0, 255, 159, 0.3)';
+                setTimeout(() => badge.style.background = 'rgba(0, 0, 0, 0.6)', 2000);
+                
+                console.log('🎤 Camera + Microphone active - Speech recognition always listening');
+            } catch(e) { 
+                console.error('Error:', e);
+                alert('Please allow camera & microphone access');
+            }
+        }
+
+        async function startMicOnly() {
+            try {
+                if (mediaStream) {
+                    mediaStream.getTracks().forEach(t => t.stop());
+                }
+                
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaStream = stream;
+                await setupAudio(stream);
+                
+                document.getElementById('videoElement').style.display = 'none';
+                document.getElementById('videoPlaceholder').style.display = 'flex';
+                
+                const badge = document.getElementById('demoBadge');
+                badge.innerHTML = '🎤 Mic Only Mode | Always listening for speech';
+                badge.style.background = 'rgba(0, 255, 159, 0.3)';
+                setTimeout(() => badge.style.background = 'rgba(0, 0, 0, 0.6)', 2000);
+                
+                console.log('🎤 Microphone-only mode active - Always listening');
+                updateMicStatus(true, 'Mic only mode');
+            } catch(e) {
+                console.error('Mic only error:', e);
+                alert('Please allow microphone access');
+            }
         }
 
         function stopCamera() {
             const video = document.getElementById('videoElement');
-            if (video.srcObject) { video.srcObject.getTracks().forEach(t => t.stop()); video.srcObject = null; }
+            if (video.srcObject) { 
+                video.srcObject.getTracks().forEach(t => t.stop()); 
+                video.srcObject = null; 
+            }
             video.style.display = 'none';
             document.getElementById('videoPlaceholder').style.display = 'flex';
             isDetecting = false;
-            if (speechRecognition) try { speechRecognition.stop(); } catch(e) {}
+            stopSpeechRecognition();
             if (audioContext) audioContext.close();
-            transcriptStatus.textContent = 'Stopped';
-            demoBadge.innerHTML = '👓 SenseAid | Tap handle to expand controls';
+            transcriptStatus.textContent = 'Ready';
+            transcriptStatus.className = 'transcript-status';
+            updateMicStatus(false, 'Stopped');
+            
+            const badge = document.getElementById('demoBadge');
+            badge.innerHTML = '👓 SenseAid | Tap handle to expand controls';
         }
 
         function testRandom() {
             const sound = SoundDatabase[Math.floor(Math.random() * SoundDatabase.length)];
-            const dir = ['left', 'right', 'center', 'up', 'down'][Math.floor(Math.random() * 5)];
+            const dir = ['left', 'right', 'center'][Math.floor(Math.random() * 3)];
             showGentleToast(sound, 70 + Math.random() * 25, dir);
             activateLEDs(sound);
             showDirectionIndicator(dir);
@@ -998,44 +1222,39 @@
             updateStatsUI();
         }
 
-        // Panel toggle functionality
+        function testMicrophone() {
+            if (!mediaStream) {
+                alert('Please enable microphone first using "Enable Camera" or "Mic Only Mode"');
+                return;
+            }
+            alert('🎤 Microphone is active! Say something and watch the transcript panel.');
+            console.log('Microphone test - speak now');
+        }
+
         function togglePanel() {
             controlPanel.classList.toggle('expanded');
-            if (controlPanel.classList.contains('expanded')) {
-                demoBadge.innerHTML = '✅ SenseAid Active | Tap handle to collapse';
-            } else {
-                demoBadge.innerHTML = '✅ SenseAid Active | Tap handle for controls';
-            }
         }
 
         // Event Listeners
         document.getElementById('btnWebcam').addEventListener('click', startCamera);
         document.getElementById('btnStopVideo').addEventListener('click', stopCamera);
+        document.getElementById('btnMicOnly').addEventListener('click', startMicOnly);
         document.getElementById('btnRandom').addEventListener('click', testRandom);
+        document.getElementById('btnTestMic').addEventListener('click', testMicrophone);
         document.getElementById('sensitivitySlider').addEventListener('input', (e) => sensitivity = parseInt(e.target.value));
-        document.getElementById('environmentSelect').addEventListener('change', (e) => currentEnvironment = e.target.value);
         
-        // Panel toggle triggers
         document.getElementById('panelHandle').addEventListener('click', togglePanel);
         document.getElementById('panelHeader').addEventListener('click', togglePanel);
-        document.getElementById('panelToggle').addEventListener('click', (e) => {
-            e.stopPropagation();
-            togglePanel();
-        });
+        document.getElementById('panelToggle').addEventListener('click', (e) => { e.stopPropagation(); togglePanel(); });
         
-        initSpeech();
+        // Auto-initialize microphone on page load (with user gesture required by browser)
+        // We'll wait for user click to start due to browser policies
+        console.log('👓 SenseAid - Click "Enable Camera" or "Mic Only Mode" to start always-on microphone');
+        console.log('🎤 Once started, the microphone will remain active and automatically restart if disconnected');
         
-        // Console welcome message
-        console.log('👓 SenseAid Demo Mode - Clean Interface with White Backgrounds');
-        console.log('💡 Features:');
-        console.log('   • White backgrounds for warning toasts and transcript panel');
-        console.log('   • No intrusive popup warnings - only gentle bottom notifications');
-        console.log('   • Full-screen camera view - controls hidden until needed');
-        console.log('   • Tap the handle bar to expand controls');
-        console.log('   • Real-time sound detection with gentle toast notifications');
-        console.log('   • Speech transcription for voice commands');
-        console.log('   • LED and directional indicators for alerts');
-        console.log('\n🎯 Click "Enable Camera" to start the demo!');
+        // Initialize speech recognition structure
+        initSpeechRecognition();
     </script>
 </body>
 </html>
+```
