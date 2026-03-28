@@ -1,17 +1,12 @@
-Here is the HTML document with the glass break classification changed to kettle boil detection, while preserving all other code and layout.
-```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>SenseAid - AR Smart Glasses | Kettle Boil Detection Focus</title>
+    <title>SenseAid - AR Smart Glasses | Enhanced MTR & Kettle Detection</title>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
     <style>
-        /* ============================================
-           PREMIUM GLASSES INTERFACE - PERSISTENT MICROPHONE
-           KETTLE BOIL DETECTION ONLY
-           ============================================ */
+       
         :root {
             --glass-primary: rgba(255, 255, 255, 0.08);
             --glass-secondary: rgba(255, 255, 255, 0.03);
@@ -21,6 +16,7 @@ Here is the HTML document with the glass break classification changed to kettle 
             --neon-green: #6eff9e;
             --neon-red: #ff6b6b;
             --neon-orange: #ffb347;
+            --mtr-blue: #3b82f6;
             --kettle-orange: #f97316;
             --bg-gradient-start: #0a0f1a;
             --bg-gradient-end: #0c1220;
@@ -222,7 +218,7 @@ Here is the HTML document with the glass break classification changed to kettle 
         .gentle-toast-content { flex: 1; }
         .gentle-toast-title { font-size: 1rem; font-weight: 600; letter-spacing: 0.5px; margin-bottom: 4px; color: #1a1a2e; }
         .gentle-toast-message { font-size: 0.8rem; opacity: 0.7; display: flex; align-items: center; gap: 12px; color: #4a4a5a; }
-        .gentle-toast-confidence { font-family: monospace; font-size: 0.75rem; padding: 2px 8px; background: rgba(249, 115, 22, 0.15); border-radius: 20px; color: #f97316; }
+        .gentle-toast-confidence { font-family: monospace; font-size: 0.75rem; padding: 2px 8px; background: rgba(95, 158, 255, 0.15); border-radius: 20px; color: #5f9eff; }
         .gentle-toast-reminder { font-size: 0.7rem; margin-top: 6px; padding-top: 4px; border-top: 1px solid rgba(0,0,0,0.08); color: #2c3e50; }
         .gentle-toast-close {
             background: rgba(0, 0, 0, 0.05);
@@ -537,7 +533,7 @@ Here is the HTML document with the glass break classification changed to kettle 
         }
         .haptic-active { animation: gentleRipple 0.3s ease-out; }
         @keyframes gentleRipple {
-            0% { background: radial-gradient(circle, rgba(249, 115, 22, 0.2) 0%, transparent 70%); opacity: 1; }
+            0% { background: radial-gradient(circle, rgba(95, 158, 255, 0.15) 0%, transparent 70%); opacity: 1; }
             100% { opacity: 0; }
         }
 
@@ -551,7 +547,7 @@ Here is the HTML document with the glass break classification changed to kettle 
             padding: 6px 16px;
             border-radius: 40px;
             font-size: 0.7rem;
-            color: #f97316;
+            color: var(--neon-blue);
             z-index: 45;
             pointer-events: none;
             white-space: nowrap;
@@ -570,8 +566,8 @@ Here is the HTML document with the glass break classification changed to kettle 
     <div class="ar-viewport">
         <video id="videoElement" autoplay playsinline muted></video>
         <div class="video-placeholder" id="videoPlaceholder">
-            <div class="video-placeholder-icon">🫖</div>
-            <p>Enable Microphone | Kettle Boil Detection Only</p>
+            <div class="video-placeholder-icon">👓🚇🫖</div>
+            <p>Enable Camera & Microphone | Enhanced MTR + Kettle Detection</p>
         </div>
         
         <div class="glasses-frame">
@@ -612,7 +608,7 @@ Here is the HTML document with the glass break classification changed to kettle 
         </div>
 
         <div class="demo-badge" id="demoBadge">
-            🫖 Kettle Boil Detection Only | Always-on Mic
+            🚇 MTR Optimized | 🫖 Kettle Enhanced | Always-on Mic
         </div>
 
         <div class="control-panel" id="controlPanel">
@@ -629,12 +625,16 @@ Here is the HTML document with the glass break classification changed to kettle 
                     <button class="control-button" id="btnStopVideo">⏹️ Stop All</button>
                 </div>
                 <div class="control-section">
+                    <button class="control-button" id="btnTestMTR">🚇 Test MTR Door Chime</button>
                     <button class="control-button" id="btnTestKettle">🫖 Test Kettle Boiling</button>
+                    <button class="control-button" id="btnRandom">🎲 Test Random Sound</button>
                 </div>
                 <div class="control-section">
                     <div class="stats-grid">
-                        <div class="stat-item"><div class="stat-value" id="statDetections">0</div><div class="stat-label">Kettle Alerts</div></div>
-                        <div class="stat-item"><div class="stat-value" id="statConfidence">0%</div><div class="stat-label">Avg Confidence</div></div>
+                        <div class="stat-item"><div class="stat-value" id="statDetections">0</div><div class="stat-label">Total Alerts</div></div>
+                        <div class="stat-item"><div class="stat-value" id="statUnique">0</div><div class="stat-label">Sound Types</div></div>
+                        <div class="stat-item"><div class="stat-value" id="statMTR">0</div><div class="stat-label">MTR Alerts</div></div>
+                        <div class="stat-item"><div class="stat-value" id="statKettle">0</div><div class="stat-label">Kettle Alerts</div></div>
                     </div>
                 </div>
             </div>
@@ -642,18 +642,21 @@ Here is the HTML document with the glass break classification changed to kettle 
     </div>
 
     <script>
-        // ========= KETTLE BOIL ONLY DETECTION - OPTIMIZED (Replaced Glass Break) =========
-        const KettleSound = {
-            id: 'kettle_boiling', 
-            name: '🫖 Kettle Boiling', 
-            icon: '🫖', 
-            color: '#f97316', 
-            urgency: 'medium', 
-            freqRange: [1900, 4600], 
-            threshold: 0.16, 
-            reminder: '🔥 Kettle is boiling! Water is ready. Turn off the kettle now.',
-            keywords: ['kettle','boil','boiling','water','tea','coffee','steam','whistle']
-        };
+        // ========= ENHANCED SOUND DATABASE - SPECIALIZED MTR & KETTLE DETECTION =========
+        const SoundDatabase = [
+            // KETTLE BOILING - Enhanced with precise frequency range and harmonic boost
+            { id: 'kettle_boiling', name: '🫖 Kettle Boiling', icon: '🫖', color: '#f97316', urgency: 'medium', freqRange: [1900, 4600], threshold: 0.18, reminder: '🔥 Kettle is boiling! Water is ready. Turn off the kettle now.', keywords: ['kettle','boil','boiling','water','tea','coffee','steam'], harmonicBoost: 1.3 },
+            // MTR Door Chime - Optimized with precise frequency profiling
+            { id: 'mtr_door_chime', name: '🚇 MTR Door Closing', icon: '🚇', color: '#3b82f6', urgency: 'medium', freqRange: [520, 1480], threshold: 0.18, reminder: '⚠️ MTR doors are closing! Stand clear of the doors.', keywords: ['mtr','door','closing','train','platform','chime'], harmonicBoost: 1.25 },
+            { id: 'mtr_announcement', name: '📢 MTR Announcement', icon: '📢', color: '#60a5fa', urgency: 'low', freqRange: [180, 720], threshold: 0.14, reminder: '🔊 MTR station announcement - listen for platform information.', keywords: ['announcement','station','mtr','train','next'], harmonicBoost: 0.95 },
+            // Other sounds
+            { id: 'car_horn', name: '🚗 Car Horn', icon: '🚗', color: '#ff6b6b', urgency: 'high', freqRange: [360, 850], threshold: 0.24, reminder: '⚠️ Vehicle horn detected! Stay alert.', keywords: ['horn','car','honk'] },
+            { id: 'fire_alarm', name: '🔥 Fire Alarm', icon: '🔥', color: '#ff6b4a', urgency: 'critical', freqRange: [800, 2400], threshold: 0.28, reminder: '🚨 CRITICAL: Fire alarm! Evacuate immediately.', keywords: ['fire','alarm','smoke'] },
+            { id: 'doorbell', name: '🔔 Doorbell', icon: '🔔', color: '#6eff9e', urgency: 'medium', freqRange: [300, 680], threshold: 0.16, reminder: '🚪 Someone is at the door!', keywords: ['doorbell','ring','door'] },
+            { id: 'baby_cry', name: '👶 Baby Crying', icon: '👶', color: '#f4d03f', urgency: 'high', freqRange: [200, 580], threshold: 0.19, reminder: '🍼 Baby is crying! Needs attention.', keywords: ['baby','cry','crying'] },
+            { id: 'person_calling', name: '📢 Person Calling', icon: '📢', color: '#5f9eff', urgency: 'medium', freqRange: [160, 680], threshold: 0.12, reminder: '🗣️ Someone is calling out!', keywords: ['help','hey','hello','call'] },
+            { id: 'bus_ding', name: '🚌 Bus Stop Bell', icon: '🔔', color: '#facc15', urgency: 'medium', freqRange: [850, 2200], threshold: 0.17, reminder: '🛑 Bus stop requested! Prepare to exit.', keywords: ['bus','stop','ding','bell'] }
+        ];
 
         // DOM Elements
         const hudDisplay = document.getElementById('hudDisplay');
@@ -676,8 +679,8 @@ Here is the HTML document with the glass break classification changed to kettle 
         const vizBars = document.querySelectorAll('.audio-bar');
         
         let audioContext = null, analyser = null, mediaStream = null;
-        let isDetecting = false, lastAlertTime = 0, alertDebounce = 1500;
-        let stats = { total: 0, confidenceSum: 0 };
+        let isDetecting = false, lastAlertTime = 0, alertDebounce = 1000;
+        let stats = { total: 0, uniqueSounds: new Set(), mtrCount: 0, kettleCount: 0, confidenceSum: 0 };
         let sensitivity = 75;
         let activeToast = null;
         let speechRecognition = null;
@@ -687,8 +690,9 @@ Here is the HTML document with the glass break classification changed to kettle 
 
         function updateStatsUI() {
             document.getElementById('statDetections').textContent = stats.total;
-            const avg = stats.total ? Math.round(stats.confidenceSum / stats.total) : 0;
-            document.getElementById('statConfidence').textContent = `${avg}%`;
+            document.getElementById('statUnique').textContent = stats.uniqueSounds.size;
+            document.getElementById('statMTR').textContent = stats.mtrCount;
+            document.getElementById('statKettle').textContent = stats.kettleCount;
         }
 
         function updateMicStatus(active, text) {
@@ -696,7 +700,7 @@ Here is the HTML document with the glass break classification changed to kettle 
             micStatusText.textContent = text;
         }
 
-        function showAlertToast(confidence, direction, source = '🎵 Sound') {
+        function showAlertToast(sound, confidence, direction, source = '🎵 Sound') {
             if (activeToast) activeToast.remove();
             
             const directionMap = { left: '← Left', right: '→ Right', center: '⋅ Center' };
@@ -705,15 +709,15 @@ Here is the HTML document with the glass break classification changed to kettle 
             const toast = document.createElement('div');
             toast.className = 'gentle-toast';
             toast.innerHTML = `
-                <div class="gentle-toast-icon">${KettleSound.icon}</div>
+                <div class="gentle-toast-icon">${sound.icon}</div>
                 <div class="gentle-toast-content">
-                    <div class="gentle-toast-title" style="color: ${KettleSound.color}">${KettleSound.name}</div>
+                    <div class="gentle-toast-title" style="color: ${sound.color}">${sound.name}</div>
                     <div class="gentle-toast-message">
                         <span>📍 ${directionText}</span>
                         <span class="gentle-toast-confidence">${Math.round(confidence)}%</span>
                         <span style="font-size:0.65rem;">${source}</span>
                     </div>
-                    <div class="gentle-toast-reminder">🔔 ${KettleSound.reminder}</div>
+                    <div class="gentle-toast-reminder">🔔 ${sound.reminder}</div>
                 </div>
                 <button class="gentle-toast-close">✕</button>
             `;
@@ -739,10 +743,10 @@ Here is the HTML document with the glass break classification changed to kettle 
             setTimeout(() => hapticOverlay.classList.remove('haptic-active'), 200);
         }
 
-        function activateLEDs() {
+        function activateLEDs(color) {
             [...ledTop, ...ledBottom].forEach(led => {
-                led.style.background = KettleSound.color;
-                led.style.boxShadow = `0 0 12px ${KettleSound.color}`;
+                led.style.background = color;
+                led.style.boxShadow = `0 0 12px ${color}`;
                 led.classList.add('led-active');
             });
             setTimeout(() => {
@@ -760,18 +764,18 @@ Here is the HTML document with the glass break classification changed to kettle 
             if (el) { el.classList.add('active'); setTimeout(() => el.classList.remove('active'), 1200); }
         }
 
-        function addHUDCard(confidence, direction) {
+        function addHUDCard(sound, confidence, direction) {
             const cards = hudDisplay.querySelectorAll('.hud-card');
             if (cards.length >= 4) cards[cards.length-1].remove();
             const dirEmoji = { left:'⬅️', right:'➡️', center:'🎯' }[direction] || '🎯';
             const card = document.createElement('div');
             card.className = 'hud-card';
             card.innerHTML = `
-                <div class="hud-icon">${KettleSound.icon}</div>
+                <div class="hud-icon">${sound.icon}</div>
                 <div class="hud-info">
-                    <div class="hud-sound-name">${KettleSound.name}</div>
-                    <div class="hud-confidence-bar"><div class="hud-confidence-fill" style="width: ${Math.min(100, confidence)}%; background: ${KettleSound.color}"></div></div>
-                    <div class="hud-reminder">${KettleSound.reminder.substring(0, 45)}</div>
+                    <div class="hud-sound-name">${sound.name}</div>
+                    <div class="hud-confidence-bar"><div class="hud-confidence-fill" style="width: ${Math.min(100, confidence)}%; background: ${sound.color}"></div></div>
+                    <div class="hud-reminder">${sound.reminder.substring(0, 45)}</div>
                 </div>
                 <div class="hud-direction">${dirEmoji}</div>
             `;
@@ -779,12 +783,16 @@ Here is the HTML document with the glass break classification changed to kettle 
             setTimeout(() => card.remove(), 4500);
         }
 
-        function matchTranscriptToKettle(text) {
+        function matchTranscriptToSound(text) {
             if (!text) return null;
             const lowerText = text.toLowerCase();
-            for (const kw of KettleSound.keywords) {
-                if (lowerText.includes(kw)) {
-                    return { score: 78 + Math.min(18, (kw.length / lowerText.length) * 20) };
+            for (const sound of SoundDatabase) {
+                if (sound.keywords) {
+                    for (const kw of sound.keywords) {
+                        if (lowerText.includes(kw)) {
+                            return { sound, keyword: kw, score: 78 + Math.min(18, (kw.length / lowerText.length) * 20) };
+                        }
+                    }
                 }
             }
             return null;
@@ -805,14 +813,16 @@ Here is the HTML document with the glass break classification changed to kettle 
                 transcriptStatus.className = 'transcript-status listening';
                 updateMicStatus(true, 'Listening...');
                 
-                const match = matchTranscriptToKettle(text);
+                const match = matchTranscriptToSound(text);
                 if (match && Date.now() - lastAlertTime > alertDebounce) {
                     const dir = ['left', 'right', 'center'][Math.floor(Math.random() * 3)];
-                    showAlertToast(match.score, dir, '🗣️ Speech');
-                    activateLEDs();
+                    showAlertToast(match.sound, match.score, dir, '🗣️ Speech');
+                    activateLEDs(match.sound.color);
                     showDirectionIndicator(dir);
-                    addHUDCard(match.score, dir);
-                    stats.total++; stats.confidenceSum += match.score;
+                    addHUDCard(match.sound, match.score, dir);
+                    stats.total++; stats.uniqueSounds.add(match.sound.name);
+                    if (match.sound.id.includes('mtr')) stats.mtrCount++;
+                    if (match.sound.id === 'kettle_boiling') stats.kettleCount++;
                     updateStatsUI();
                     lastAlertTime = Date.now();
                 }
@@ -828,14 +838,16 @@ Here is the HTML document with the glass break classification changed to kettle 
                 updateMicStatus(true, 'Active');
                 lastTranscriptText = text;
                 
-                const match = matchTranscriptToKettle(text);
+                const match = matchTranscriptToSound(text);
                 if (match && Date.now() - lastAlertTime > alertDebounce) {
                     const dir = ['left', 'right', 'center'][Math.floor(Math.random() * 3)];
-                    showAlertToast(match.score + 5, dir, '🗣️ Speech');
-                    activateLEDs();
+                    showAlertToast(match.sound, match.score + 5, dir, '🗣️ Speech');
+                    activateLEDs(match.sound.color);
                     showDirectionIndicator(dir);
-                    addHUDCard(match.score + 5, dir);
-                    stats.total++; stats.confidenceSum += match.score + 5;
+                    addHUDCard(match.sound, match.score + 5, dir);
+                    stats.total++; stats.uniqueSounds.add(match.sound.name);
+                    if (match.sound.id.includes('mtr')) stats.mtrCount++;
+                    if (match.sound.id === 'kettle_boiling') stats.kettleCount++;
                     updateStatsUI();
                     lastAlertTime = Date.now();
                 }
@@ -870,7 +882,7 @@ Here is the HTML document with the glass break classification changed to kettle 
 
         function startSpeechRecognition() { if (!speechRecognition && !initSpeechRecognition()) return; try { speechRecognition.start(); } catch(e) {} }
 
-        async function analyzeKettleSound() {
+        async function analyzeSound() {
             if (!analyser || !isDetecting) return;
             const dataArray = new Uint8Array(analyser.frequencyBinCount);
             analyser.getByteFrequencyData(dataArray);
@@ -881,39 +893,42 @@ Here is the HTML document with the glass break classification changed to kettle 
             let sum = 0; for (let i = 0; i < dataArray.length; i++) sum += dataArray[i];
             const amplitude = sum / dataArray.length / 255;
             const normAmp = Math.min(1, amplitude * 2.2);
-            vizBars.forEach((bar, i) => { bar.style.height = `${12 + normAmp * 28 * (1 - i / vizBars.length)}px`; bar.style.background = amplitude > 0.2 ? '#f97316' : '#6eff9e'; });
-            if (amplitude < 0.07) return;
+            vizBars.forEach((bar, i) => { bar.style.height = `${12 + normAmp * 28 * (1 - i / vizBars.length)}px`; bar.style.background = amplitude > 0.22 ? '#ff8c8c' : '#6eff9e'; });
+            if (amplitude < 0.08) return;
             
-            const [low, high] = KettleSound.freqRange;
-            let freqScore = (dominantFreq >= low && dominantFreq <= high) ? 1.0 : Math.max(0, 1 - Math.min(Math.abs(dominantFreq - low) / low, Math.abs(dominantFreq - high) / high) * 1.1);
-            const ampScore = Math.min(1, amplitude / KettleSound.threshold);
-            let totalScore = (freqScore * 0.7) + (ampScore * 0.3);
-            totalScore *= 1.25; // harmonic boost for kettle
-            
-            // Additional boost for kettle boiling frequency range
-            if (dominantFreq > 2100 && dominantFreq < 4200 && amplitude > 0.16) totalScore += 0.2;
-            
-            // Speech fusion boost
-            if (lastTranscriptText && Date.now() - lastAlertTime < 3500) {
-                for (const kw of KettleSound.keywords) {
-                    if (lastTranscriptText.toLowerCase().includes(kw)) { totalScore += 0.18; break; }
+            let bestMatch = null, bestScore = 0;
+            for (const sound of SoundDatabase) {
+                const [low, high] = sound.freqRange;
+                let freqScore = (dominantFreq >= low && dominantFreq <= high) ? 1.0 : Math.max(0, 1 - Math.min(Math.abs(dominantFreq - low) / low, Math.abs(dominantFreq - high) / high) * 1.1);
+                const ampScore = Math.min(1, amplitude / sound.threshold);
+                let totalScore = (freqScore * 0.68) + (ampScore * 0.32);
+                if (sound.harmonicBoost) totalScore *= sound.harmonicBoost;
+                if (sound.id === 'mtr_door_chime' && dominantFreq > 600 && dominantFreq < 1300 && amplitude > 0.17) totalScore += 0.18;
+                if (sound.id === 'kettle_boiling' && dominantFreq > 2100 && dominantFreq < 4200 && amplitude > 0.17) totalScore += 0.22;
+                if (lastTranscriptText && Date.now() - lastAlertTime < 3500) {
+                    for (const kw of (sound.keywords || [])) {
+                        if (lastTranscriptText.toLowerCase().includes(kw)) { totalScore += 0.16; break; }
+                    }
                 }
+                if (totalScore > bestScore && totalScore > 0.46) { bestScore = totalScore; bestMatch = sound; }
             }
             
-            if (totalScore > 0.48 && Date.now() - lastAlertTime > alertDebounce) {
-                const confidence = 52 + totalScore * 45;
+            if (bestMatch && Date.now() - lastAlertTime > alertDebounce) {
+                const confidence = 52 + bestScore * 45;
                 const dirs = ['left', 'right', 'center', 'left', 'center'];
                 const direction = dirs[Math.floor(Math.random() * dirs.length)];
-                const fusionHint = (lastTranscriptText && KettleSound.keywords.some(kw => lastTranscriptText.toLowerCase().includes(kw))) ? "🎵+🗣️ Fusion" : "🎵 Audio";
-                showAlertToast(confidence, direction, fusionHint);
-                activateLEDs();
+                const fusionHint = (lastTranscriptText && bestMatch.keywords && bestMatch.keywords.some(kw => lastTranscriptText.toLowerCase().includes(kw))) ? "🎵+🗣️ Fusion" : "🎵 Audio";
+                showAlertToast(bestMatch, confidence, direction, fusionHint);
+                activateLEDs(bestMatch.color);
                 showDirectionIndicator(direction);
-                addHUDCard(confidence, direction);
-                stats.total++; stats.confidenceSum += confidence;
+                addHUDCard(bestMatch, confidence, direction);
+                stats.total++; stats.uniqueSounds.add(bestMatch.name);
+                if (bestMatch.id.includes('mtr')) stats.mtrCount++;
+                if (bestMatch.id === 'kettle_boiling') stats.kettleCount++;
                 updateStatsUI();
                 lastAlertTime = Date.now();
                 const badge = document.getElementById('demoBadge');
-                badge.style.background = `rgba(249, 115, 22, 0.8)`;
+                badge.style.background = `rgba(95, 158, 255, 0.8)`;
                 setTimeout(() => badge.style.background = 'rgba(0, 0, 0, 0.6)', 500);
             }
         }
@@ -927,7 +942,7 @@ Here is the HTML document with the glass break classification changed to kettle 
             source.connect(analyser);
             await audioContext.resume();
             isDetecting = true;
-            function loop() { if (isDetecting) { analyzeKettleSound(); requestAnimationFrame(loop); } }
+            function loop() { if (isDetecting) { analyzeSound(); requestAnimationFrame(loop); } }
             loop();
             startSpeechRecognition();
         }
@@ -970,26 +985,50 @@ Here is the HTML document with the glass break classification changed to kettle 
             transcriptStatus.className = 'transcript-status';
         }
 
+        function testMTR() {
+            const mtrSound = SoundDatabase.find(s => s.id === 'mtr_door_chime');
+            if (mtrSound) {
+                showAlertToast(mtrSound, 94, 'center', '🚇 MTR Test');
+                activateLEDs(mtrSound.color);
+                addHUDCard(mtrSound, 94, 'center');
+                stats.total++; stats.uniqueSounds.add(mtrSound.name); stats.mtrCount++; updateStatsUI();
+            }
+        }
+
         function testKettle() {
-            const confidence = 94;
+            const kettleSound = SoundDatabase.find(s => s.id === 'kettle_boiling');
+            if (kettleSound) {
+                showAlertToast(kettleSound, 96, 'center', '🫖 Kettle Test');
+                activateLEDs(kettleSound.color);
+                addHUDCard(kettleSound, 96, 'center');
+                stats.total++; stats.uniqueSounds.add(kettleSound.name); stats.kettleCount++; updateStatsUI();
+            }
+        }
+
+        function testRandom() {
+            const sound = SoundDatabase[Math.floor(Math.random() * SoundDatabase.length)];
             const dir = ['left', 'right', 'center'][Math.floor(Math.random() * 3)];
-            showAlertToast(confidence, dir, '🔬 Test');
-            activateLEDs();
+            showAlertToast(sound, 75 + Math.random() * 20, dir, '🔬 Test');
+            activateLEDs(sound.color);
             showDirectionIndicator(dir);
-            addHUDCard(confidence, dir);
-            stats.total++; stats.confidenceSum += confidence;
+            addHUDCard(sound, 85, dir);
+            stats.total++; stats.uniqueSounds.add(sound.name);
+            if (sound.id.includes('mtr')) stats.mtrCount++;
+            if (sound.id === 'kettle_boiling') stats.kettleCount++;
             updateStatsUI();
         }
 
         document.getElementById('btnWebcam').addEventListener('click', startFullMode);
         document.getElementById('btnMicOnly').addEventListener('click', startMicOnly);
         document.getElementById('btnStopVideo').addEventListener('click', stopAll);
+        document.getElementById('btnTestMTR').addEventListener('click', testMTR);
         document.getElementById('btnTestKettle').addEventListener('click', testKettle);
+        document.getElementById('btnRandom').addEventListener('click', testRandom);
         document.getElementById('panelHandle').addEventListener('click', () => document.getElementById('controlPanel').classList.toggle('expanded'));
         document.getElementById('panelHeader').addEventListener('click', () => document.getElementById('controlPanel').classList.toggle('expanded'));
         
         initSpeechRecognition();
-        console.log('✅ SenseAid Kettle Focus | Glass break detection replaced with optimized kettle boiling detection');
+        console.log('✅ SenseAid Enhanced | MTR door chime + Kettle boiling optimized | Speech fusion active');
     </script>
 </body>
 </html>
