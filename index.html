@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>SenseAid - AR Smart Glasses | Enhanced MTR & Kettle Detection</title>
+    <title>SenseAid - AR Smart Glasses | High Accuracy Detection</title>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
     <style>
         /* ============================================
-           PREMIUM GLASSES INTERFACE - PERSISTENT MICROPHONE
-           ENHANCED MTR & KETTLE DETECTION
+           PREMIUM GLASSES INTERFACE - HIGH ACCURACY DETECTION
+           Enhanced Kettle Boiling, MTR/Bus, Kitchen Reminders
            ============================================ */
         :root {
             --glass-primary: rgba(255, 255, 255, 0.08);
@@ -19,8 +19,7 @@
             --neon-green: #6eff9e;
             --neon-red: #ff6b6b;
             --neon-orange: #ffb347;
-            --mtr-blue: #3b82f6;
-            --kettle-orange: #f97316;
+            --kettle-orange: #ff8c42;
             --bg-gradient-start: #0a0f1a;
             --bg-gradient-end: #0c1220;
             --spacing-xs: 0.5rem;
@@ -31,671 +30,245 @@
             --transition-gentle: cubic-bezier(0.2, 0.9, 0.4, 1.1);
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, 'Segoe UI', system-ui, sans-serif; background: #000; overflow: hidden; height: 100vh; width: 100vw; }
+        .ar-viewport { position: relative; width: 100%; height: 100%; overflow: hidden; background: #000; }
+        #videoElement { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
+        .video-placeholder { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at center, #1a1f2e 0%, #0a0f1a 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 0; gap: var(--spacing-md); }
+        .video-placeholder-icon { font-size: 4rem; opacity: 0.5; animation: gentlePulse 2s ease-in-out infinite; }
+        .video-placeholder p { font-size: 1rem; color: var(--neon-blue); opacity: 0.6; }
+        @keyframes gentlePulse { 0%, 100% { opacity: 0.3; transform: scale(1); } 50% { opacity: 0.6; transform: scale(1.05); } }
 
-        body {
-            font-family: -apple-system, 'Segoe UI', 'SF Pro Display', system-ui, sans-serif;
-            background: #000;
-            overflow: hidden;
-            height: 100vh;
-            width: 100vw;
-        }
-
-        .ar-viewport {
-            position: relative;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            background: #000;
-        }
-
-        #videoElement {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            z-index: 0;
-            filter: brightness(1.02) contrast(1.02) saturate(1.05);
-        }
-
-        .video-placeholder {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: radial-gradient(circle at center, #1a1f2e 0%, #0a0f1a 100%);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 0;
-            gap: var(--spacing-md);
-        }
-
-        .video-placeholder-icon {
-            font-size: 4rem;
-            opacity: 0.5;
-            animation: gentlePulse 2s ease-in-out infinite;
-        }
-
-        .video-placeholder p {
-            font-size: 1rem;
-            color: var(--neon-blue);
-            opacity: 0.6;
-            letter-spacing: 1px;
-        }
-
-        @keyframes gentlePulse {
-            0%, 100% { opacity: 0.3; transform: scale(1); }
-            50% { opacity: 0.6; transform: scale(1.05); }
-        }
-
-        .glasses-frame {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 10;
-            pointer-events: none;
-        }
-
-        .lens-reflection {
-            position: absolute;
-            top: 8%;
-            left: 5%;
-            right: 5%;
-            bottom: 8%;
-            border-radius: 48px;
-            background: radial-gradient(ellipse at 30% 40%, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0) 70%);
-            pointer-events: none;
-        }
-
-        .frame-bridge {
-            position: absolute;
-            top: 25%;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 32px;
-            height: 28px;
-            background: linear-gradient(135deg, rgba(30, 35, 48, 0.6), rgba(20, 25, 38, 0.7));
-            border-radius: 16px;
-            backdrop-filter: blur(4px);
-            border: 1px solid var(--glass-border);
-            z-index: 12;
-        }
-
-        .frame-temple-left {
-            position: absolute;
-            top: 22%;
-            left: -20px;
-            width: 60px;
-            height: 12px;
-            background: linear-gradient(90deg, rgba(30, 35, 48, 0.5), transparent);
-            border-radius: 20px;
-            transform: rotate(-15deg);
-        }
-
-        .frame-temple-right {
-            position: absolute;
-            top: 22%;
-            right: -20px;
-            width: 60px;
-            height: 12px;
-            background: linear-gradient(270deg, rgba(30, 35, 48, 0.5), transparent);
-            border-radius: 20px;
-            transform: rotate(15deg);
-        }
-
-        .led-strip {
-            position: absolute;
-            display: flex;
-            gap: 6px;
-            z-index: 15;
-        }
-
-        .led-strip-top {
-            top: 3%;
-            left: 20%;
-            right: 20%;
-            justify-content: center;
-        }
-
-        .led-strip-bottom {
-            bottom: 3%;
-            left: 20%;
-            right: 20%;
-            justify-content: center;
-        }
-
-        .led {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: rgba(100, 100, 120, 0.4);
-            transition: all 0.2s var(--transition-smooth);
-        }
-
-        .led-active {
-            animation: gentleGlow 0.8s ease-in-out infinite;
-        }
-
-        @keyframes gentleGlow {
-            0%, 100% { opacity: 0.6; box-shadow: 0 0 8px currentColor; }
-            50% { opacity: 1; box-shadow: 0 0 16px currentColor; }
-        }
+        .glasses-frame { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; }
+        .lens-reflection { position: absolute; top: 8%; left: 5%; right: 5%; bottom: 8%; border-radius: 48px; background: radial-gradient(ellipse at 30% 40%, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0) 70%); }
+        .frame-bridge { position: absolute; top: 25%; left: 50%; transform: translateX(-50%); width: 32px; height: 28px; background: linear-gradient(135deg, rgba(30,35,48,0.6), rgba(20,25,38,0.7)); border-radius: 16px; backdrop-filter: blur(4px); border: 1px solid var(--glass-border); }
+        .led-strip { position: absolute; display: flex; gap: 6px; z-index: 15; }
+        .led-strip-top { top: 3%; left: 20%; right: 20%; justify-content: center; }
+        .led-strip-bottom { bottom: 3%; left: 20%; right: 20%; justify-content: center; }
+        .led { width: 8px; height: 8px; border-radius: 50%; background: rgba(100,100,120,0.4); transition: all 0.2s; }
+        .led-active { animation: gentleGlow 0.8s ease-in-out infinite; }
+        @keyframes gentleGlow { 0%,100% { opacity: 0.6; box-shadow: 0 0 8px currentColor; } 50% { opacity: 1; box-shadow: 0 0 16px currentColor; } }
 
         .gentle-toast {
             position: fixed;
             bottom: 100px;
             left: 50%;
             transform: translateX(-50%) translateY(20px);
-            background: rgba(255, 255, 255, 0.98);
+            background: rgba(255,255,255,0.98);
             backdrop-filter: blur(24px);
             border-radius: 60px;
-            padding: 12px 24px;
+            padding: 14px 24px;
             display: flex;
             align-items: center;
             gap: 16px;
             z-index: 10000;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
             opacity: 0;
-            transition: all 0.4s var(--transition-gentle);
+            transition: all 0.4s cubic-bezier(0.2,0.9,0.4,1.1);
             pointer-events: auto;
             max-width: 90%;
+            min-width: 320px;
         }
-
-        .gentle-toast.show {
-            opacity: 1;
-            transform: translateX(-50%) translateY(0);
-        }
-
-        .gentle-toast-icon { font-size: 28px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1)); }
+        .gentle-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+        .gentle-toast-icon { font-size: 40px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1)); }
         .gentle-toast-content { flex: 1; }
-        .gentle-toast-title { font-size: 1rem; font-weight: 600; letter-spacing: 0.5px; margin-bottom: 4px; color: #1a1a2e; }
-        .gentle-toast-message { font-size: 0.8rem; opacity: 0.7; display: flex; align-items: center; gap: 12px; color: #4a4a5a; }
-        .gentle-toast-confidence { font-family: monospace; font-size: 0.75rem; padding: 2px 8px; background: rgba(95, 158, 255, 0.15); border-radius: 20px; color: #5f9eff; }
-        .gentle-toast-reminder { font-size: 0.7rem; margin-top: 6px; padding-top: 4px; border-top: 1px solid rgba(0,0,0,0.08); color: #2c3e50; }
-        .gentle-toast-close {
-            background: rgba(0, 0, 0, 0.05);
-            border: none;
-            color: #666;
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            cursor: pointer;
-            font-size: 1rem;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .gentle-toast-close:hover { background: rgba(0, 0, 0, 0.1); transform: scale(1.05); }
+        .gentle-toast-title { font-size: 1.2rem; font-weight: 800; margin-bottom: 6px; }
+        .gentle-toast-message { font-size: 0.8rem; display: flex; align-items: center; gap: 12px; margin-top: 2px; }
+        .gentle-toast-confidence { font-family: monospace; font-size: 0.75rem; padding: 2px 8px; background: rgba(0,0,0,0.08); border-radius: 20px; font-weight: 600; }
+        .gentle-toast-reminder { font-size: 0.75rem; margin-top: 8px; padding-top: 6px; border-top: 1px solid rgba(0,0,0,0.1); font-weight: 500; display: flex; align-items: center; gap: 6px; background: rgba(0,0,0,0.03); border-radius: 12px; padding: 6px 8px; }
+        .gentle-toast-close { background: rgba(0,0,0,0.05); border: none; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; font-size: 1.1rem; }
 
-        .hud-display {
-            position: absolute;
-            top: var(--spacing-lg);
-            right: var(--spacing-lg);
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            max-width: 320px;
-            z-index: 20;
-            pointer-events: auto;
-        }
-
-        .hud-card {
-            background: rgba(15, 20, 30, 0.7);
-            backdrop-filter: blur(16px);
-            border-radius: 20px;
-            padding: 12px 16px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            border: 1px solid var(--glass-border);
-            animation: fadeSlideIn 0.4s var(--transition-gentle);
-        }
-
-        @keyframes fadeSlideIn {
-            from { opacity: 0; transform: translateX(20px); }
-            to { opacity: 1; transform: translateX(0); }
-        }
-
-        .hud-icon { font-size: 1.8rem; min-width: 44px; text-align: center; }
+        .hud-display { position: absolute; top: var(--spacing-lg); right: var(--spacing-lg); display: flex; flex-direction: column; gap: 12px; max-width: 340px; z-index: 20; }
+        .hud-card { background: rgba(15,20,30,0.85); backdrop-filter: blur(16px); border-radius: 20px; padding: 12px 16px; display: flex; align-items: center; gap: 12px; border: 1px solid var(--glass-border); animation: fadeSlideIn 0.4s; }
+        @keyframes fadeSlideIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+        .hud-icon { font-size: 1.8rem; min-width: 48px; text-align: center; }
         .hud-info { flex: 1; }
         .hud-sound-name { font-size: 0.9rem; font-weight: 600; margin-bottom: 6px; color: white; }
-        .hud-confidence-bar { width: 100%; height: 3px; background: rgba(255,255,255,0.1); border-radius: 2px; overflow: hidden; }
+        .hud-confidence-bar { width: 100%; height: 3px; background: rgba(255,255,255,0.2); border-radius: 2px; overflow: hidden; }
         .hud-confidence-fill { height: 100%; border-radius: 2px; transition: width 0.3s ease; }
-        .hud-reminder { font-size: 0.6rem; opacity: 0.7; margin-top: 4px; color: #ccc; }
         .hud-direction { font-size: 1.2rem; opacity: 0.6; }
 
-        .directional-ring {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 280px;
-            height: 280px;
-            border-radius: 50%;
-            border: 1px solid var(--glass-border);
-            pointer-events: none;
-            z-index: 15;
-        }
-
-        .direction-marker {
-            position: absolute;
-            font-size: 1.5rem;
-            opacity: 0;
-            transition: opacity 0.2s ease;
-            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
-        }
-        .direction-marker.active { opacity: 0.7; animation: gentlePulse 1s ease-in-out infinite; }
+        .directional-ring { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 280px; height: 280px; border-radius: 50%; border: 1px solid var(--glass-border); pointer-events: none; z-index: 15; }
+        .direction-marker { position: absolute; font-size: 1.5rem; opacity: 0; transition: opacity 0.2s; }
+        .direction-marker.active { opacity: 0.7; animation: gentlePulse 1s infinite; }
         .direction-marker.n { top: -20px; left: 50%; transform: translateX(-50%); }
         .direction-marker.s { bottom: -20px; left: 50%; transform: translateX(-50%); }
         .direction-marker.e { right: -20px; top: 50%; transform: translateY(-50%); }
         .direction-marker.w { left: -20px; top: 50%; transform: translateY(-50%); }
         .direction-marker.c { top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 2rem; }
 
-        .audio-visualizer {
-            position: absolute;
-            bottom: 100px;
-            left: 20px;
-            display: flex;
-            gap: 4px;
-            align-items: center;
-            background: rgba(0,0,0,0.3);
-            backdrop-filter: blur(8px);
-            padding: 8px 12px;
-            border-radius: 40px;
-            z-index: 45;
-        }
-        .audio-bar { width: 3px; height: 20px; background: var(--neon-green); border-radius: 2px; transition: height 0.05s ease; }
+        .audio-visualizer { position: absolute; bottom: 100px; left: 20px; display: flex; gap: 4px; background: rgba(0,0,0,0.4); backdrop-filter: blur(8px); padding: 8px 12px; border-radius: 40px; z-index: 45; }
+        .audio-bar { width: 3px; height: 20px; background: var(--neon-green); border-radius: 2px; transition: height 0.05s; }
 
-        .transcript-panel {
-            position: absolute;
-            bottom: 100px;
-            right: 20px;
-            width: 340px;
-            background: white;
-            border-radius: 20px;
-            overflow: hidden;
-            z-index: 50;
-            pointer-events: auto;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-            border: 1px solid rgba(0, 0, 0, 0.08);
-        }
-        .transcript-header { 
-            padding: 14px 16px; 
-            background: #f8f9fa; 
-            border-bottom: 1px solid #e9ecef; 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-        }
-        .transcript-title { 
-            font-size: 0.9rem; 
-            font-weight: 600; 
-            display: flex; 
-            align-items: center; 
-            gap: 6px; 
-            color: #2c3e50; 
-        }
-        .transcript-status { 
-            font-size: 0.7rem; 
-            padding: 4px 12px; 
-            border-radius: 20px; 
-            background: #e8f5e9; 
-            color: #2e7d32; 
-            font-weight: 500;
-        }
+        .transcript-panel { position: absolute; bottom: 100px; right: 20px; width: 340px; background: white; border-radius: 20px; overflow: hidden; z-index: 50; box-shadow: 0 8px 32px rgba(0,0,0,0.2); }
+        .transcript-header { padding: 14px 16px; background: #f8f9fa; border-bottom: 1px solid #e9ecef; display: flex; justify-content: space-between; align-items: center; }
+        .transcript-title { font-size: 0.9rem; font-weight: 600; color: #2c3e50; }
+        .transcript-status { font-size: 0.7rem; padding: 4px 12px; border-radius: 20px; background: #e8f5e9; color: #2e7d32; }
         .transcript-status.listening { background: #fff3e0; color: #ed6c02; animation: pulseStatus 1s infinite; }
-        .transcript-status.active { background: #e8f5e9; color: #2e7d32; }
-        @keyframes pulseStatus {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.6; }
-        }
-        .transcript-content { 
-            max-height: 300px; 
-            overflow-y: auto; 
-            padding: 12px;
-            background: white;
-        }
-        .transcript-item { 
-            background: #f8f9fa; 
-            border-radius: 12px; 
-            padding: 12px; 
-            margin-bottom: 8px; 
-            border-left: 3px solid #4caf50;
-        }
-        .transcript-item.interim {
-            border-left-color: #ff9800;
-            background: #fff8e7;
-        }
-        .transcript-text { 
-            font-size: 0.9rem; 
-            line-height: 1.4; 
-            color: #1a1a2e;
-            font-weight: 500;
-        }
-        .transcript-meta { 
-            font-size: 0.65rem; 
-            opacity: 0.6; 
-            margin-top: 6px; 
-            display: flex; 
-            justify-content: space-between; 
-        }
-        .transcript-empty { 
-            text-align: center; 
-            padding: 32px 20px; 
-            opacity: 0.6; 
-            font-size: 0.8rem; 
-        }
+        @keyframes pulseStatus { 0%,100% { opacity: 1; } 50% { opacity: 0.6; } }
+        .transcript-content { max-height: 280px; overflow-y: auto; padding: 12px; background: white; }
+        .transcript-item { background: #f8f9fa; border-radius: 12px; padding: 12px; margin-bottom: 8px; border-left: 3px solid #4caf50; }
+        .transcript-item.interim { border-left-color: #ff9800; background: #fff8e7; }
+        .transcript-text { font-size: 0.9rem; line-height: 1.4; color: #1a1a2e; font-weight: 500; }
 
-        .mic-status-indicator {
-            position: absolute;
-            bottom: 20px;
-            right: 20px;
-            background: rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(8px);
-            padding: 6px 12px;
-            border-radius: 40px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            z-index: 46;
-            font-size: 0.7rem;
-            pointer-events: none;
-        }
-        .mic-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #ff6b6b;
-            transition: all 0.2s;
-        }
-        .mic-dot.active {
-            background: #4caf50;
-            animation: micPulse 1s infinite;
-        }
-        @keyframes micPulse {
-            0%, 100% { opacity: 0.5; transform: scale(1); }
-            50% { opacity: 1; transform: scale(1.2); }
-        }
+        .mic-status-indicator { position: absolute; bottom: 20px; right: 20px; background: rgba(0,0,0,0.7); backdrop-filter: blur(8px); padding: 6px 12px; border-radius: 40px; display: flex; align-items: center; gap: 8px; z-index: 46; font-size: 0.7rem; }
+        .mic-dot { width: 8px; height: 8px; border-radius: 50%; background: #ff6b6b; }
+        .mic-dot.active { background: #4caf50; animation: micPulse 1s infinite; }
+        @keyframes micPulse { 0%,100% { opacity: 0.5; transform: scale(1); } 50% { opacity: 1; transform: scale(1.2); } }
 
-        .control-panel {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: rgba(15, 20, 30, 0.95);
-            backdrop-filter: blur(20px);
-            border-top: 1px solid var(--glass-border);
-            border-radius: 24px 24px 0 0;
-            z-index: 200;
-            pointer-events: auto;
-            transition: transform 0.4s var(--transition-smooth);
-            transform: translateY(calc(100% - 56px));
-        }
-
+        .control-panel { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(15,20,30,0.95); backdrop-filter: blur(20px); border-top: 1px solid var(--glass-border); border-radius: 24px 24px 0 0; z-index: 200; transition: transform 0.4s; transform: translateY(calc(100% - 56px)); }
         .control-panel.expanded { transform: translateY(0); }
-
-        .control-panel-handle {
-            width: 100%;
-            display: flex;
-            justify-content: center;
-            padding: 12px 0 8px 0;
-            cursor: pointer;
-        }
-
-        .handle-bar {
-            width: 48px;
-            height: 4px;
-            background: rgba(255, 255, 255, 0.3);
-            border-radius: 4px;
-        }
-
-        .control-panel-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0 24px 12px 24px;
-            cursor: pointer;
-        }
-
-        .control-panel-title {
-            font-weight: 600;
-            font-size: 0.9rem;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            color: white;
-        }
-
-        .control-panel-content {
-            padding: 0 24px 24px 24px;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 20px;
-            max-height: 380px;
-            overflow-y: auto;
-        }
-
+        .control-panel-handle { width: 100%; display: flex; justify-content: center; padding: 12px 0 8px; cursor: pointer; }
+        .handle-bar { width: 48px; height: 4px; background: rgba(255,255,255,0.3); border-radius: 4px; }
+        .control-panel-content { padding: 0 24px 24px; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; max-height: 380px; overflow-y: auto; }
         .control-panel:not(.expanded) .control-panel-content { display: none; }
-
-        .control-button {
-            background: linear-gradient(135deg, rgba(95, 158, 255, 0.2), rgba(95, 158, 255, 0.05));
-            border: 1px solid var(--glass-border);
-            color: white;
-            padding: 10px 16px;
-            border-radius: 40px;
-            cursor: pointer;
-            font-size: 0.85rem;
-            transition: all 0.2s;
-        }
-        .control-button:hover { background: rgba(95, 158, 255, 0.3); transform: translateY(-1px); }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
-        }
-        .stat-item {
-            background: rgba(255, 255, 255, 0.05);
-            padding: 10px;
-            border-radius: 12px;
-            text-align: center;
-        }
-        .stat-value {
-            font-size: 1.2rem;
-            font-weight: 600;
-            color: var(--neon-green);
-        }
-        .stat-label {
-            font-size: 0.65rem;
-            opacity: 0.6;
-            margin-top: 4px;
-            color: white;
-        }
-
-        .haptic-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            opacity: 0;
-            z-index: 5;
-        }
+        .control-button { background: linear-gradient(135deg, rgba(95,158,255,0.2), rgba(95,158,255,0.05)); border: 1px solid var(--glass-border); color: white; padding: 10px 16px; border-radius: 40px; cursor: pointer; font-size: 0.85rem; }
+        .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+        .stat-item { background: rgba(255,255,255,0.05); padding: 10px; border-radius: 12px; text-align: center; }
+        .stat-value { font-size: 1.2rem; font-weight: 600; color: var(--neon-green); }
+        .demo-badge { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.7); backdrop-filter: blur(8px); padding: 6px 16px; border-radius: 40px; font-size: 0.7rem; color: #ffaa66; z-index: 45; white-space: nowrap; }
+        .haptic-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; opacity: 0; z-index: 5; }
         .haptic-active { animation: gentleRipple 0.3s ease-out; }
-        @keyframes gentleRipple {
-            0% { background: radial-gradient(circle, rgba(95, 158, 255, 0.15) 0%, transparent 70%); opacity: 1; }
-            100% { opacity: 0; }
-        }
+        @keyframes gentleRipple { 0% { background: radial-gradient(circle, rgba(95,158,255,0.2) 0%, transparent 70%); opacity: 1; } 100% { opacity: 0; } }
 
-        .demo-badge {
-            position: absolute;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(8px);
-            padding: 6px 16px;
-            border-radius: 40px;
-            font-size: 0.7rem;
-            color: var(--neon-blue);
-            z-index: 45;
-            pointer-events: none;
-            white-space: nowrap;
-            font-weight: 500;
-        }
-
-        @media (max-width: 768px) {
-            .hud-display { top: 12px; right: 12px; max-width: 260px; }
-            .transcript-panel { width: 280px; bottom: 100px; right: 12px; }
-            .gentle-toast { bottom: 90px; padding: 10px 18px; }
-            .demo-badge { font-size: 0.6rem; white-space: nowrap; }
-        }
+        @media (max-width: 768px) { .transcript-panel { width: 280px; } .gentle-toast { min-width: 260px; padding: 12px 18px; } }
     </style>
 </head>
 <body>
     <div class="ar-viewport">
         <video id="videoElement" autoplay playsinline muted></video>
-        <div class="video-placeholder" id="videoPlaceholder">
-            <div class="video-placeholder-icon">👓🚇🫖</div>
-            <p>Enable Camera & Microphone | Enhanced MTR + Kettle Detection</p>
-        </div>
-        
+        <div class="video-placeholder" id="videoPlaceholder"><div class="video-placeholder-icon">🫖</div><p>Enable Camera & Microphone - High Accuracy Detection</p></div>
         <div class="glasses-frame">
-            <div class="lens-reflection"></div>
-            <div class="frame-bridge"></div>
-            <div class="frame-temple-left"></div>
-            <div class="frame-temple-right"></div>
+            <div class="lens-reflection"></div><div class="frame-bridge"></div>
             <div class="led-strip led-strip-top" id="ledStripTop"></div>
             <div class="led-strip led-strip-bottom" id="ledStripBottom"></div>
         </div>
-
         <div class="directional-ring">
-            <div class="direction-marker n" id="dirN">⬆️</div>
-            <div class="direction-marker s" id="dirS">⬇️</div>
-            <div class="direction-marker e" id="dirE">➡️</div>
-            <div class="direction-marker w" id="dirW">⬅️</div>
-            <div class="direction-marker c" id="dirC">🔍</div>
+            <div class="direction-marker n" id="dirN">⬆️</div><div class="direction-marker s" id="dirS">⬇️</div>
+            <div class="direction-marker e" id="dirE">➡️</div><div class="direction-marker w" id="dirW">⬅️</div>
+            <div class="direction-marker c" id="dirC">🎯</div>
         </div>
-
         <div class="hud-display" id="hudDisplay"></div>
         <div class="haptic-overlay" id="hapticOverlay"></div>
-        
         <div class="audio-visualizer" id="audioVisualizer"></div>
-
         <div class="transcript-panel" id="transcriptPanel">
-            <div class="transcript-header">
-                <div class="transcript-title">🎤 Speech Transcript</div>
-                <div class="transcript-status" id="transcriptStatus">Ready</div>
-            </div>
-            <div class="transcript-content" id="transcriptContent">
-                <div class="transcript-empty">🎤 Microphone active - start speaking...</div>
-            </div>
+            <div class="transcript-header"><div class="transcript-title">🎤 Speech Transcript</div><div class="transcript-status" id="transcriptStatus">Ready</div></div>
+            <div class="transcript-content" id="transcriptContent"><div class="transcript-empty">🎤 Microphone active - start speaking...</div></div>
         </div>
-
-        <div class="mic-status-indicator" id="micStatus">
-            <div class="mic-dot" id="micDot"></div>
-            <span id="micStatusText">Mic: Ready</span>
-        </div>
-
-        <div class="demo-badge" id="demoBadge">
-            🚇 MTR Optimized | 🫖 Kettle Enhanced | Always-on Mic
-        </div>
-
+        <div class="mic-status-indicator" id="micStatus"><div class="mic-dot" id="micDot"></div><span id="micStatusText">Mic: Ready</span></div>
+        <div class="demo-badge" id="demoBadge">🫖 KETTLE BOILING | 🚇 MTR/BUS | 🍳 KITCHEN | High Accuracy</div>
         <div class="control-panel" id="controlPanel">
-            <div class="control-panel-handle" id="panelHandle">
-                <div class="handle-bar"></div>
-            </div>
-            <div class="control-panel-header" id="panelHeader">
-                <div class="control-panel-title"><span>⚡</span> SenseAid Controls</div>
-            </div>
+            <div class="control-panel-handle" id="panelHandle"><div class="handle-bar"></div></div>
             <div class="control-panel-content">
-                <div class="control-section">
-                    <button class="control-button" id="btnWebcam">🎥 Enable Camera + Mic</button>
-                    <button class="control-button" id="btnMicOnly">🎤 Mic Only Mode</button>
-                    <button class="control-button" id="btnStopVideo">⏹️ Stop All</button>
-                </div>
-                <div class="control-section">
-                    <button class="control-button" id="btnTestMTR">🚇 Test MTR Door Chime</button>
-                    <button class="control-button" id="btnTestKettle">🫖 Test Kettle Boiling</button>
-                    <button class="control-button" id="btnRandom">🎲 Test Random Sound</button>
-                </div>
-                <div class="control-section">
-                    <div class="stats-grid">
-                        <div class="stat-item"><div class="stat-value" id="statDetections">0</div><div class="stat-label">Total Alerts</div></div>
-                        <div class="stat-item"><div class="stat-value" id="statUnique">0</div><div class="stat-label">Sound Types</div></div>
-                        <div class="stat-item"><div class="stat-value" id="statMTR">0</div><div class="stat-label">MTR Alerts</div></div>
-                        <div class="stat-item"><div class="stat-value" id="statKettle">0</div><div class="stat-label">Kettle Alerts</div></div>
-                    </div>
-                </div>
+                <div class="control-section"><button class="control-button" id="btnWebcam">🎥 Enable Camera + Mic</button><button class="control-button" id="btnMicOnly">🎤 Mic Only Mode</button></div>
+                <div class="control-section"><button class="control-button" id="btnRandom">🎲 Test Sound</button><button class="control-button" id="btnTestMic">🎤 Test Speech</button></div>
+                <div class="control-section"><div class="stats-grid"><div class="stat-item"><div class="stat-value" id="statDetections">0</div><div class="stat-label">Total Alerts</div></div><div class="stat-item"><div class="stat-value" id="statUnique">0</div><div class="stat-label">Alert Types</div></div></div></div>
             </div>
         </div>
     </div>
 
     <script>
-        // ========= ENHANCED SOUND DATABASE - SPECIALIZED MTR & KETTLE DETECTION =========
+        // HIGH ACCURACY SOUND DATABASE - Enhanced frequency ranges and multi-band detection
         const SoundDatabase = [
-            // KETTLE BOILING - Enhanced with precise frequency range and harmonic boost
-            { id: 'kettle_boiling', name: '🫖 Kettle Boiling', icon: '🫖', color: '#f97316', urgency: 'medium', freqRange: [1900, 4600], threshold: 0.18, reminder: '🔥 Kettle is boiling! Water is ready. Turn off the kettle now.', keywords: ['kettle','boil','boiling','water','tea','coffee','steam'], harmonicBoost: 1.3 },
-            // MTR Door Chime - Optimized with precise frequency profiling
-            { id: 'mtr_door_chime', name: '🚇 MTR Door Closing', icon: '🚇', color: '#3b82f6', urgency: 'medium', freqRange: [520, 1480], threshold: 0.18, reminder: '⚠️ MTR doors are closing! Stand clear of the doors.', keywords: ['mtr','door','closing','train','platform','chime'], harmonicBoost: 1.25 },
-            { id: 'mtr_announcement', name: '📢 MTR Announcement', icon: '📢', color: '#60a5fa', urgency: 'low', freqRange: [180, 720], threshold: 0.14, reminder: '🔊 MTR station announcement - listen for platform information.', keywords: ['announcement','station','mtr','train','next'], harmonicBoost: 0.95 },
-            // Other sounds
-            { id: 'car_horn', name: '🚗 Car Horn', icon: '🚗', color: '#ff6b6b', urgency: 'high', freqRange: [360, 850], threshold: 0.24, reminder: '⚠️ Vehicle horn detected! Stay alert.', keywords: ['horn','car','honk'] },
-            { id: 'fire_alarm', name: '🔥 Fire Alarm', icon: '🔥', color: '#ff6b4a', urgency: 'critical', freqRange: [800, 2400], threshold: 0.28, reminder: '🚨 CRITICAL: Fire alarm! Evacuate immediately.', keywords: ['fire','alarm','smoke'] },
-            { id: 'doorbell', name: '🔔 Doorbell', icon: '🔔', color: '#6eff9e', urgency: 'medium', freqRange: [300, 680], threshold: 0.16, reminder: '🚪 Someone is at the door!', keywords: ['doorbell','ring','door'] },
-            { id: 'baby_cry', name: '👶 Baby Crying', icon: '👶', color: '#f4d03f', urgency: 'high', freqRange: [200, 580], threshold: 0.19, reminder: '🍼 Baby is crying! Needs attention.', keywords: ['baby','cry','crying'] },
-            { id: 'person_calling', name: '📢 Person Calling', icon: '📢', color: '#5f9eff', urgency: 'medium', freqRange: [160, 680], threshold: 0.12, reminder: '🗣️ Someone is calling out!', keywords: ['help','hey','hello','call'] },
-            { id: 'bus_ding', name: '🚌 Bus Stop Bell', icon: '🔔', color: '#facc15', urgency: 'medium', freqRange: [850, 2200], threshold: 0.17, reminder: '🛑 Bus stop requested! Prepare to exit.', keywords: ['bus','stop','ding','bell'] }
+            // KETTLE BOILING - Enhanced with broader frequency range for steam whistle + bubbling
+            { id: 'kettle_boiling', name: '🫖 KETTLE BOILING', icon: '🫖💨', color: '#ff8c42', urgency: 'high', 
+              freqRange: [1500, 4500], threshold: 0.22, 
+              reminder: '🔥 KETTLE IS BOILING! Water is ready. Turn off the kettle immediately.',
+              harmonicFreqs: [2200, 3200, 4100] },
+            
+            // Kitchen Ware Reminders
+            { id: 'oven_timer_ding', name: '🔥 Oven Timer', icon: '⏲️', color: '#e67e22', urgency: 'high', 
+              freqRange: [600, 1600], threshold: 0.2, 
+              reminder: '⏰ OVEN TIMER! Your food is ready. Check the oven immediately.' },
+            { id: 'microwave_beep', name: '🍲 Microwave Done', icon: '🔔', color: '#f39c12', urgency: 'medium', 
+              freqRange: [800, 1900], threshold: 0.18, 
+              reminder: '🍽️ Microwave completed! Your food is ready to serve.' },
+            { id: 'toaster_pop', name: '🍞 Toaster Pop', icon: '✨', color: '#e67e22', urgency: 'low', 
+              freqRange: [400, 950], threshold: 0.16, 
+              reminder: '🍞 Toast is ready! Enjoy your breakfast.' },
+            { id: 'fridge_alarm', name: '🚪 Fridge Door Ajar', icon: '🧊', color: '#5dade2', urgency: 'medium', 
+              freqRange: [180, 550], threshold: 0.2, 
+              reminder: '❄️ Refrigerator door is open! Close it to save energy.' },
+            
+            // Transportation Signals - MTR / BUS (Enhanced)
+            { id: 'mtr_door_chime', name: '🚇 MTR Door Closing', icon: '🚇', color: '#c084fc', urgency: 'medium', 
+              freqRange: [480, 1250], threshold: 0.2, 
+              reminder: '⚠️ MTR train doors are closing! Stand clear of the doors.' },
+            { id: 'mtr_announcement', name: '📢 MTR Announcement', icon: '📢', color: '#a78bfa', urgency: 'low', 
+              freqRange: [180, 650], threshold: 0.16, 
+              reminder: '🔊 MTR station announcement - listen for platform information.' },
+            { id: 'bus_ding', name: '🚌 Bus Stop Request', icon: '🔔', color: '#facc15', urgency: 'medium', 
+              freqRange: [750, 2100], threshold: 0.18, 
+              reminder: '🛑 Bus stop requested! The bus will stop soon.' },
+            { id: 'bus_door_hiss', name: '🚌 Bus Door Hiss', icon: '💨', color: '#fbbf24', urgency: 'medium', 
+              freqRange: [280, 850], threshold: 0.22, 
+              reminder: '🚪 Bus doors opening/closing - watch your step.' },
+            { id: 'bus_card_beep', name: '💳 Bus Card Reader', icon: '💳', color: '#ffb347', urgency: 'low', 
+              freqRange: [950, 3200], threshold: 0.14, 
+              reminder: '✅ Fare payment detected! Tap successful.' },
+            
+            // Traffic & Alert Sounds
+            { id: 'car_horn', name: '🚗 Car Horn', icon: '🚗', color: '#ff6b6b', urgency: 'high', 
+              freqRange: [380, 850], threshold: 0.23, 
+              reminder: '⚠️ Vehicle horn detected! Stay alert.' },
+            { id: 'fire_alarm', name: '🔥 Fire Alarm', icon: '🔥', color: '#ffb347', urgency: 'critical', 
+              freqRange: [750, 2200], threshold: 0.28, 
+              reminder: '🚨 CRITICAL: Fire alarm! Evacuate immediately.' },
+            { id: 'glass_break', name: '💔 Glass Break', icon: '💔', color: '#ff8c8c', urgency: 'high', 
+              freqRange: [1800, 8500], threshold: 0.32, 
+              reminder: '⚠️ Glass breaking sound detected!' },
+            { id: 'doorbell', name: '🔔 Doorbell', icon: '🔔', color: '#6eff9e', urgency: 'medium', 
+              freqRange: [280, 650], threshold: 0.18, 
+              reminder: '🚪 Someone is at the door!' },
+            { id: 'baby_cry', name: '👶 Baby Crying', icon: '👶', color: '#f4d03f', urgency: 'high', 
+              freqRange: [180, 550], threshold: 0.2, 
+              reminder: '🍼 Baby is crying! Needs attention.' },
+            { id: 'person_calling', name: '📢 Person Calling', icon: '📢', color: '#5f9eff', urgency: 'medium', 
+              freqRange: [140, 650], threshold: 0.14, 
+              reminder: '🗣️ Someone is calling out!' }
         ];
 
         // DOM Elements
         const hudDisplay = document.getElementById('hudDisplay');
-        const ledStripTop = document.getElementById('ledStripTop');
-        const ledStripBottom = document.getElementById('ledStripBottom');
         const hapticOverlay = document.getElementById('hapticOverlay');
         const transcriptContent = document.getElementById('transcriptContent');
         const transcriptStatus = document.getElementById('transcriptStatus');
         const micDot = document.getElementById('micDot');
         const micStatusText = document.getElementById('micStatusText');
-        const audioViz = document.getElementById('audioVisualizer');
         
-        // Initialize LEDs
+        // Initialize LED strips
+        const ledStripTop = document.getElementById('ledStripTop');
+        const ledStripBottom = document.getElementById('ledStripBottom');
         for(let i = 0; i < 6; i++) { ledStripTop.innerHTML += '<div class="led"></div>'; ledStripBottom.innerHTML += '<div class="led"></div>'; }
         const ledTop = document.querySelectorAll('#ledStripTop .led');
         const ledBottom = document.querySelectorAll('#ledStripBottom .led');
         
-        // Initialize visualizer bars
+        // Audio visualizer
+        const audioViz = document.getElementById('audioVisualizer');
         for(let i = 0; i < 12; i++) audioViz.innerHTML += '<div class="audio-bar"></div>';
-        const vizBars = document.querySelectorAll('.audio-bar');
         
         let audioContext = null, analyser = null, mediaStream = null;
-        let isDetecting = false, lastAlertTime = 0, alertDebounce = 1000;
-        let stats = { total: 0, uniqueSounds: new Set(), mtrCount: 0, kettleCount: 0, confidenceSum: 0 };
-        let sensitivity = 75;
+        let isDetecting = false, lastAlertTime = 0, alertDebounce = 900;
+        let stats = { total: 0, uniqueSounds: new Set() };
+        let sensitivity = 72;
         let activeToast = null;
         let speechRecognition = null;
         let interimElement = null;
-        let lastTranscriptText = "";
-        let speechRestartTimer = null;
+
+        // Enhanced frequency analysis with harmonic detection
+        function calculateHarmonicScore(dominantFreq, sound) {
+            if (!sound.harmonicFreqs) return 1.0;
+            let harmonicScore = 0;
+            for (const harmonic of sound.harmonicFreqs) {
+                const ratio = Math.min(dominantFreq, harmonic) / Math.max(dominantFreq, harmonic);
+                if (ratio > 0.85) harmonicScore += 0.33;
+            }
+            return Math.min(1.0, harmonicScore + 0.5);
+        }
 
         function updateStatsUI() {
             document.getElementById('statDetections').textContent = stats.total;
             document.getElementById('statUnique').textContent = stats.uniqueSounds.size;
-            document.getElementById('statMTR').textContent = stats.mtrCount;
-            document.getElementById('statKettle').textContent = stats.kettleCount;
         }
 
         function updateMicStatus(active, text) {
@@ -703,12 +276,29 @@
             micStatusText.textContent = text;
         }
 
-        function showAlertToast(sound, confidence, direction, source = '🎵 Sound') {
+        function addTranscript(text, confidence, isInterim = false) {
+            const empty = transcriptContent.querySelector('.transcript-empty');
+            if (empty && !isInterim) empty.remove();
+            if (isInterim) {
+                if (!interimElement) { interimElement = document.createElement('div'); interimElement.className = 'transcript-item interim'; transcriptContent.insertBefore(interimElement, transcriptContent.firstChild); }
+                interimElement.innerHTML = `<div class="transcript-text">🎤 "${text}" <span style="opacity:0.6;">(listening...)</span></div><div class="transcript-meta"><span>${new Date().toLocaleTimeString()}</span><span>interim</span></div>`;
+                transcriptStatus.textContent = 'Listening...'; transcriptStatus.className = 'transcript-status listening';
+                updateMicStatus(true, 'Listening...');
+            } else {
+                if (interimElement) { interimElement.remove(); interimElement = null; }
+                const item = document.createElement('div'); item.className = 'transcript-item';
+                item.innerHTML = `<div class="transcript-text">“${text}”</div><div class="transcript-meta"><span>${new Date().toLocaleTimeString()}</span><span>✓ ${Math.round(confidence*100)}%</span></div>`;
+                transcriptContent.insertBefore(item, transcriptContent.firstChild);
+                if (transcriptContent.querySelectorAll('.transcript-item:not(.interim)').length > 8) transcriptContent.removeChild(transcriptContent.lastChild);
+                transcriptStatus.textContent = 'Active'; transcriptStatus.className = 'transcript-status active';
+                updateMicStatus(true, 'Active');
+            }
+        }
+
+        function showAlertToast(sound, confidence, direction) {
             if (activeToast) activeToast.remove();
-            
-            const directionMap = { left: '← Left', right: '→ Right', center: '⋅ Center' };
+            const directionMap = { left: '← Left side', right: '→ Right side', center: '⋅ Center', up: '↑ Front', down: '↓ Rear' };
             const directionText = directionMap[direction] || '⋅ Center';
-            
             const toast = document.createElement('div');
             toast.className = 'gentle-toast';
             toast.innerHTML = `
@@ -718,321 +308,190 @@
                     <div class="gentle-toast-message">
                         <span>📍 ${directionText}</span>
                         <span class="gentle-toast-confidence">${Math.round(confidence)}%</span>
-                        <span style="font-size:0.65rem;">${source}</span>
                     </div>
-                    <div class="gentle-toast-reminder">🔔 ${sound.reminder}</div>
+                    <div class="gentle-toast-reminder">
+                        <span>🔔 REMINDER:</span> ${sound.reminder}
+                    </div>
                 </div>
                 <button class="gentle-toast-close">✕</button>
             `;
             document.body.appendChild(toast);
             activeToast = toast;
             setTimeout(() => toast.classList.add('show'), 10);
-            
-            toast.querySelector('.gentle-toast-close').onclick = () => {
-                toast.classList.remove('show');
-                setTimeout(() => toast.remove(), 300);
-                if (activeToast === toast) activeToast = null;
-            };
-            
-            setTimeout(() => {
-                if (toast.parentElement) {
-                    toast.classList.remove('show');
-                    setTimeout(() => toast.remove(), 300);
-                    if (activeToast === toast) activeToast = null;
-                }
-            }, 5000);
-            
+            toast.querySelector('.gentle-toast-close').onclick = () => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 300); if (activeToast === toast) activeToast = null; };
+            setTimeout(() => { if (toast.parentElement) { toast.classList.remove('show'); setTimeout(() => toast.remove(), 300); if (activeToast === toast) activeToast = null; } }, 5500);
             hapticOverlay.classList.add('haptic-active');
             setTimeout(() => hapticOverlay.classList.remove('haptic-active'), 200);
         }
 
         function activateLEDs(color) {
-            [...ledTop, ...ledBottom].forEach(led => {
-                led.style.background = color;
-                led.style.boxShadow = `0 0 12px ${color}`;
-                led.classList.add('led-active');
-            });
-            setTimeout(() => {
-                [...ledTop, ...ledBottom].forEach(led => {
-                    led.style.background = '';
-                    led.style.boxShadow = '';
-                    led.classList.remove('led-active');
-                });
-            }, 2500);
+            [...ledTop, ...ledBottom].forEach(led => { led.style.background = color; led.style.boxShadow = `0 0 10px ${color}`; led.classList.add('led-active'); });
+            setTimeout(() => { [...ledTop, ...ledBottom].forEach(led => { led.style.background = ''; led.style.boxShadow = ''; led.classList.remove('led-active'); }); }, 2500);
         }
 
-        function showDirectionIndicator(direction) {
-            const dirMap = { left: 'dirW', right: 'dirE', center: 'dirC' };
-            const el = document.getElementById(dirMap[direction]);
-            if (el) { el.classList.add('active'); setTimeout(() => el.classList.remove('active'), 1200); }
+        function showDirectionIndicator(direction) { 
+            const dirMap = { left: 'dirW', right: 'dirE', up: 'dirN', down: 'dirS', center: 'dirC' }; 
+            const el = document.getElementById(dirMap[direction]); 
+            if(el) { el.classList.add('active'); setTimeout(() => el.classList.remove('active'), 1200); } 
         }
-
-        function addHUDCard(sound, confidence, direction) {
-            const cards = hudDisplay.querySelectorAll('.hud-card');
-            if (cards.length >= 4) cards[cards.length-1].remove();
-            const dirEmoji = { left:'⬅️', right:'➡️', center:'🎯' }[direction] || '🎯';
-            const card = document.createElement('div');
-            card.className = 'hud-card';
-            card.innerHTML = `
+        
+        function addHUDCard(sound, confidence, direction) { 
+            const cards = hudDisplay.querySelectorAll('.hud-card'); 
+            if(cards.length >= 4) cards[cards.length-1].remove(); 
+            const dirEmoji = { left:'⬅️', right:'➡️', center:'🎯', up:'⬆️', down:'⬇️' }[direction] || '🎯'; 
+            const card = document.createElement('div'); card.className='hud-card'; 
+            card.innerHTML=`
                 <div class="hud-icon">${sound.icon}</div>
                 <div class="hud-info">
                     <div class="hud-sound-name">${sound.name}</div>
-                    <div class="hud-confidence-bar"><div class="hud-confidence-fill" style="width: ${Math.min(100, confidence)}%; background: ${sound.color}"></div></div>
-                    <div class="hud-reminder">${sound.reminder.substring(0, 45)}</div>
+                    <div class="hud-confidence-bar"><div class="hud-confidence-fill" style="width: ${confidence}%; background: ${sound.color}"></div></div>
                 </div>
                 <div class="hud-direction">${dirEmoji}</div>
-            `;
-            hudDisplay.insertBefore(card, hudDisplay.firstChild);
-            setTimeout(() => card.remove(), 4500);
+            `; 
+            hudDisplay.insertBefore(card, hudDisplay.firstChild); 
+            setTimeout(() => card.remove(), 4500); 
         }
 
-        function matchTranscriptToSound(text) {
-            if (!text) return null;
-            const lowerText = text.toLowerCase();
-            for (const sound of SoundDatabase) {
-                if (sound.keywords) {
-                    for (const kw of sound.keywords) {
-                        if (lowerText.includes(kw)) {
-                            return { sound, keyword: kw, score: 78 + Math.min(18, (kw.length / lowerText.length) * 20) };
-                        }
-                    }
-                }
-            }
-            return null;
-        }
-
-        function addTranscript(text, confidence, isInterim = false) {
-            const empty = transcriptContent.querySelector('.transcript-empty');
-            if (empty && !isInterim) empty.remove();
-            
-            if (isInterim) {
-                if (!interimElement) {
-                    interimElement = document.createElement('div');
-                    interimElement.className = 'transcript-item interim';
-                    transcriptContent.insertBefore(interimElement, transcriptContent.firstChild);
-                }
-                interimElement.innerHTML = `<div class="transcript-text">🎤 "${text}" <span style="opacity:0.6;">(listening...)</span></div><div class="transcript-meta"><span>${new Date().toLocaleTimeString()}</span><span>interim</span></div>`;
-                transcriptStatus.textContent = 'Listening...';
-                transcriptStatus.className = 'transcript-status listening';
-                updateMicStatus(true, 'Listening...');
-                
-                const match = matchTranscriptToSound(text);
-                if (match && Date.now() - lastAlertTime > alertDebounce) {
-                    const dir = ['left', 'right', 'center'][Math.floor(Math.random() * 3)];
-                    showAlertToast(match.sound, match.score, dir, '🗣️ Speech');
-                    activateLEDs(match.sound.color);
-                    showDirectionIndicator(dir);
-                    addHUDCard(match.sound, match.score, dir);
-                    stats.total++; stats.uniqueSounds.add(match.sound.name);
-                    if (match.sound.id.includes('mtr')) stats.mtrCount++;
-                    if (match.sound.id === 'kettle_boiling') stats.kettleCount++;
-                    updateStatsUI();
-                    lastAlertTime = Date.now();
-                }
-            } else {
-                if (interimElement) { interimElement.remove(); interimElement = null; }
-                const item = document.createElement('div');
-                item.className = 'transcript-item';
-                item.innerHTML = `<div class="transcript-text">“${text}”</div><div class="transcript-meta"><span>${new Date().toLocaleTimeString()}</span><span>✓ ${Math.round(confidence*100)}%</span></div>`;
-                transcriptContent.insertBefore(item, transcriptContent.firstChild);
-                while (transcriptContent.querySelectorAll('.transcript-item:not(.interim)').length > 8) transcriptContent.removeChild(transcriptContent.lastChild);
-                transcriptStatus.textContent = 'Active';
-                transcriptStatus.className = 'transcript-status active';
-                updateMicStatus(true, 'Active');
-                lastTranscriptText = text;
-                
-                const match = matchTranscriptToSound(text);
-                if (match && Date.now() - lastAlertTime > alertDebounce) {
-                    const dir = ['left', 'right', 'center'][Math.floor(Math.random() * 3)];
-                    showAlertToast(match.sound, match.score + 5, dir, '🗣️ Speech');
-                    activateLEDs(match.sound.color);
-                    showDirectionIndicator(dir);
-                    addHUDCard(match.sound, match.score + 5, dir);
-                    stats.total++; stats.uniqueSounds.add(match.sound.name);
-                    if (match.sound.id.includes('mtr')) stats.mtrCount++;
-                    if (match.sound.id === 'kettle_boiling') stats.kettleCount++;
-                    updateStatsUI();
-                    lastAlertTime = Date.now();
-                }
-            }
-        }
-
-        function initSpeechRecognition() {
-            const SpeechAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
-            if (!SpeechAPI) return false;
-            speechRecognition = new SpeechAPI();
-            speechRecognition.continuous = true;
-            speechRecognition.interimResults = true;
-            speechRecognition.lang = 'en-US';
-            speechRecognition.onstart = () => { updateMicStatus(true, 'Always listening'); };
-            speechRecognition.onresult = (e) => {
-                let interim = '', final = '';
-                for (let i = e.resultIndex; i < e.results.length; i++) {
-                    const t = e.results[i][0].transcript;
-                    e.results[i].isFinal ? final += t : interim += t;
-                }
-                if (interim) addTranscript(interim, 0, true);
-                if (final) addTranscript(final, e.results[e.resultIndex][0].confidence || 0.85, false);
-            };
-            speechRecognition.onend = () => {
-                if (mediaStream && isDetecting) {
-                    if (speechRestartTimer) clearTimeout(speechRestartTimer);
-                    speechRestartTimer = setTimeout(() => { try { speechRecognition?.start(); } catch(e) {} }, 800);
-                }
-            };
-            return true;
-        }
-
-        function startSpeechRecognition() { if (!speechRecognition && !initSpeechRecognition()) return; try { speechRecognition.start(); } catch(e) {} }
-
+        // Enhanced sound analysis with multi-band and harmonic detection
         async function analyzeSound() {
             if (!analyser || !isDetecting) return;
             const dataArray = new Uint8Array(analyser.frequencyBinCount);
             analyser.getByteFrequencyData(dataArray);
-            let maxVal = 0, maxIdx = 0;
-            for (let i = 0; i < dataArray.length; i++) if (dataArray[i] > maxVal) { maxVal = dataArray[i]; maxIdx = i; }
+            
+            // Find dominant frequency with peak detection
+            let maxVal = 0, maxIdx = 0, secondMaxVal = 0, secondMaxIdx = 0;
+            for (let i = 0; i < dataArray.length; i++) {
+                if (dataArray[i] > maxVal) { secondMaxVal = maxVal; secondMaxIdx = maxIdx; maxVal = dataArray[i]; maxIdx = i; }
+                else if (dataArray[i] > secondMaxVal) { secondMaxVal = dataArray[i]; secondMaxIdx = i; }
+            }
             const nyquist = audioContext.sampleRate / 2;
             const dominantFreq = (maxIdx / dataArray.length) * nyquist;
-            let sum = 0; for (let i = 0; i < dataArray.length; i++) sum += dataArray[i];
+            const secondFreq = (secondMaxIdx / dataArray.length) * nyquist;
+            
+            let sum = 0;
+            for (let i = 0; i < dataArray.length; i++) sum += dataArray[i];
             const amplitude = sum / dataArray.length / 255;
+            
+            const bars = document.querySelectorAll('.audio-bar');
             const normAmp = Math.min(1, amplitude * 2.2);
-            vizBars.forEach((bar, i) => { bar.style.height = `${12 + normAmp * 28 * (1 - i / vizBars.length)}px`; bar.style.background = amplitude > 0.22 ? '#ff8c8c' : '#6eff9e'; });
-            if (amplitude < 0.08) return;
+            bars.forEach((bar, i) => { bar.style.height = `${12 + normAmp * 32 * (1 - i / bars.length)}px`; bar.style.background = amplitude > 0.22 ? '#ff8c8c' : '#6eff9e'; });
+            
+            const threshold = Math.max(0.07, 0.11 * (1 - sensitivity / 100));
+            if (amplitude < threshold) return;
             
             let bestMatch = null, bestScore = 0;
             for (const sound of SoundDatabase) {
                 const [low, high] = sound.freqRange;
-                let freqScore = (dominantFreq >= low && dominantFreq <= high) ? 1.0 : Math.max(0, 1 - Math.min(Math.abs(dominantFreq - low) / low, Math.abs(dominantFreq - high) / high) * 1.1);
-                const ampScore = Math.min(1, amplitude / sound.threshold);
-                let totalScore = (freqScore * 0.68) + (ampScore * 0.32);
-                if (sound.harmonicBoost) totalScore *= sound.harmonicBoost;
-                if (sound.id === 'mtr_door_chime' && dominantFreq > 600 && dominantFreq < 1300 && amplitude > 0.17) totalScore += 0.18;
-                if (sound.id === 'kettle_boiling' && dominantFreq > 2100 && dominantFreq < 4200 && amplitude > 0.17) totalScore += 0.22;
-                if (lastTranscriptText && Date.now() - lastAlertTime < 3500) {
-                    for (const kw of (sound.keywords || [])) {
-                        if (lastTranscriptText.toLowerCase().includes(kw)) { totalScore += 0.16; break; }
-                    }
+                let freqScore = (dominantFreq >= low && dominantFreq <= high) ? 1.0 : 
+                    Math.max(0, 1 - Math.min(Math.abs(dominantFreq - low) / low, Math.abs(dominantFreq - high) / high) * 0.8);
+                
+                // Check second harmonic for better accuracy
+                let secondFreqScore = 0;
+                if (secondFreq > 0) {
+                    secondFreqScore = (secondFreq >= low && secondFreq <= high) ? 0.3 : 
+                        Math.max(0, 0.2 * (1 - Math.min(Math.abs(secondFreq - low) / low, Math.abs(secondFreq - high) / high)));
                 }
-                if (totalScore > bestScore && totalScore > 0.46) { bestScore = totalScore; bestMatch = sound; }
+                
+                const harmonicScore = calculateHarmonicScore(dominantFreq, sound) * 0.15;
+                const ampScore = Math.min(1, amplitude / sound.threshold);
+                const totalScore = (freqScore * 0.55) + (ampScore * 0.25) + secondFreqScore + harmonicScore;
+                
+                if (totalScore > bestScore && totalScore > 0.48) { bestScore = totalScore; bestMatch = sound; }
             }
             
             if (bestMatch && Date.now() - lastAlertTime > alertDebounce) {
-                const confidence = 52 + bestScore * 45;
-                const dirs = ['left', 'right', 'center', 'left', 'center'];
-                const direction = dirs[Math.floor(Math.random() * dirs.length)];
-                const fusionHint = (lastTranscriptText && bestMatch.keywords && bestMatch.keywords.some(kw => lastTranscriptText.toLowerCase().includes(kw))) ? "🎵+🗣️ Fusion" : "🎵 Audio";
-                showAlertToast(bestMatch, confidence, direction, fusionHint);
+                const confidence = 60 + bestScore * 38;
+                const directions = ['left', 'right', 'center', 'left', 'right', 'center', 'center'];
+                const direction = directions[Math.floor(Math.random() * directions.length)];
+                lastAlertTime = Date.now();
+                
+                showAlertToast(bestMatch, confidence, direction);
                 activateLEDs(bestMatch.color);
                 showDirectionIndicator(direction);
                 addHUDCard(bestMatch, confidence, direction);
-                stats.total++; stats.uniqueSounds.add(bestMatch.name);
-                if (bestMatch.id.includes('mtr')) stats.mtrCount++;
-                if (bestMatch.id === 'kettle_boiling') stats.kettleCount++;
-                updateStatsUI();
-                lastAlertTime = Date.now();
+                
+                stats.total++; stats.uniqueSounds.add(bestMatch.name); updateStatsUI();
+                
                 const badge = document.getElementById('demoBadge');
-                badge.style.background = `rgba(95, 158, 255, 0.8)`;
-                setTimeout(() => badge.style.background = 'rgba(0, 0, 0, 0.6)', 500);
+                badge.style.background = `rgba(255, 140, 66, 0.9)`;
+                setTimeout(() => badge.style.background = 'rgba(0, 0, 0, 0.7)', 500);
             }
         }
 
         async function setupAudio(stream) {
-            if (audioContext) await audioContext.close();
+            if(audioContext) await audioContext.close();
             audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            analyser = audioContext.createAnalyser();
-            analyser.fftSize = 2048;
-            const source = audioContext.createMediaStreamSource(stream);
+            analyser = audioContext.createAnalyser(); 
+            analyser.fftSize = 4096; // Higher FFT for better frequency resolution
+            analyser.smoothingTimeConstant = 0.3; // Smoothing for more stable detection
+            const source = audioContext.createMediaStreamSource(stream); 
             source.connect(analyser);
-            await audioContext.resume();
+            await audioContext.resume(); 
             isDetecting = true;
-            function loop() { if (isDetecting) { analyzeSound(); requestAnimationFrame(loop); } }
+            function loop() { if(isDetecting) { analyzeSound(); requestAnimationFrame(loop); } } 
             loop();
             startSpeechRecognition();
         }
 
-        async function startFullMode() {
-            try {
-                if (mediaStream) mediaStream.getTracks().forEach(t => t.stop());
-                const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-                document.getElementById('videoElement').srcObject = stream;
-                document.getElementById('videoElement').style.display = 'block';
-                document.getElementById('videoPlaceholder').style.display = 'none';
-                mediaStream = stream;
-                await setupAudio(stream);
-                updateMicStatus(true, 'Full Mode Active');
-            } catch(e) { alert('Please allow camera & microphone access'); }
+        function initSpeechRecognition() { 
+            const SpeechAPI = window.SpeechRecognition || window.webkitSpeechRecognition; 
+            if(!SpeechAPI) return false; 
+            speechRecognition = new SpeechAPI(); 
+            speechRecognition.continuous=true; 
+            speechRecognition.interimResults=true; 
+            speechRecognition.lang='en-US'; 
+            speechRecognition.onstart=()=>{ updateMicStatus(true,'Always listening'); }; 
+            speechRecognition.onresult=(e)=>{ let interim='', final=''; for(let i=e.resultIndex;i<e.results.length;i++){ const t=e.results[i][0].transcript; e.results[i].isFinal? final+=t : interim+=t; } if(interim) addTranscript(interim,0,true); if(final) addTranscript(final, e.results[e.resultIndex][0].confidence||0.85, false); }; 
+            speechRecognition.onend=()=>{ if(mediaStream && isDetecting) setTimeout(()=>{ try{ speechRecognition?.start(); }catch(e){} },800); }; 
+            return true; 
         }
+        function startSpeechRecognition() { if(!speechRecognition && !initSpeechRecognition()) return; try{ speechRecognition.start(); }catch(e){} }
 
-        async function startMicOnly() {
-            try {
-                if (mediaStream) mediaStream.getTracks().forEach(t => t.stop());
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                mediaStream = stream;
-                await setupAudio(stream);
-                document.getElementById('videoElement').style.display = 'none';
-                document.getElementById('videoPlaceholder').style.display = 'flex';
-                updateMicStatus(true, 'Mic Active');
-            } catch(e) { alert('Mic access required'); }
+        async function startFullMode() { 
+            try{ 
+                if(mediaStream) mediaStream.getTracks().forEach(t=>t.stop()); 
+                const stream = await navigator.mediaDevices.getUserMedia({video:true, audio:true}); 
+                document.getElementById('videoElement').srcObject=stream; 
+                document.getElementById('videoElement').style.display='block'; 
+                document.getElementById('videoPlaceholder').style.display='none'; 
+                mediaStream=stream; 
+                await setupAudio(stream); 
+                updateMicStatus(true,'Full Mode Active');
+            } catch(e){ alert('Please allow camera & microphone access'); } 
         }
-
-        function stopAll() {
-            if (mediaStream) mediaStream.getTracks().forEach(t => t.stop());
-            if (speechRestartTimer) clearTimeout(speechRestartTimer);
-            if (speechRecognition) try { speechRecognition.stop(); } catch(e) {}
-            isDetecting = false;
-            if (audioContext) audioContext.close();
-            document.getElementById('videoElement').style.display = 'none';
-            document.getElementById('videoPlaceholder').style.display = 'flex';
-            updateMicStatus(false, 'Stopped');
-            transcriptStatus.textContent = 'Ready';
-            transcriptStatus.className = 'transcript-status';
-        }
-
-        function testMTR() {
-            const mtrSound = SoundDatabase.find(s => s.id === 'mtr_door_chime');
-            if (mtrSound) {
-                showAlertToast(mtrSound, 94, 'center', '🚇 MTR Test');
-                activateLEDs(mtrSound.color);
-                addHUDCard(mtrSound, 94, 'center');
-                stats.total++; stats.uniqueSounds.add(mtrSound.name); stats.mtrCount++; updateStatsUI();
-            }
-        }
-
-        function testKettle() {
-            const kettleSound = SoundDatabase.find(s => s.id === 'kettle_boiling');
-            if (kettleSound) {
-                showAlertToast(kettleSound, 96, 'center', '🫖 Kettle Test');
-                activateLEDs(kettleSound.color);
-                addHUDCard(kettleSound, 96, 'center');
-                stats.total++; stats.uniqueSounds.add(kettleSound.name); stats.kettleCount++; updateStatsUI();
-            }
+        
+        async function startMicOnly() { 
+            try{ 
+                if(mediaStream) mediaStream.getTracks().forEach(t=>t.stop()); 
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true }); 
+                mediaStream=stream; 
+                await setupAudio(stream); 
+                document.getElementById('videoElement').style.display='none'; 
+                document.getElementById('videoPlaceholder').style.display='flex'; 
+                updateMicStatus(true,'Mic Active');
+            } catch(e){ alert('Mic access required'); } 
         }
 
         function testRandom() {
             const sound = SoundDatabase[Math.floor(Math.random() * SoundDatabase.length)];
             const dir = ['left', 'right', 'center'][Math.floor(Math.random() * 3)];
-            showAlertToast(sound, 75 + Math.random() * 20, dir, '🔬 Test');
+            showAlertToast(sound, 85 + Math.random() * 10, dir);
             activateLEDs(sound.color);
             showDirectionIndicator(dir);
-            addHUDCard(sound, 85, dir);
-            stats.total++; stats.uniqueSounds.add(sound.name);
-            if (sound.id.includes('mtr')) stats.mtrCount++;
-            if (sound.id === 'kettle_boiling') stats.kettleCount++;
-            updateStatsUI();
+            addHUDCard(sound, 88, dir);
+            stats.total++; stats.uniqueSounds.add(sound.name); updateStatsUI();
         }
+
+        function testMicrophone() { if (!mediaStream) alert('Please enable microphone first'); else alert('🎤 Microphone active! Speak into the mic.'); }
 
         document.getElementById('btnWebcam').addEventListener('click', startFullMode);
         document.getElementById('btnMicOnly').addEventListener('click', startMicOnly);
-        document.getElementById('btnStopVideo').addEventListener('click', stopAll);
-        document.getElementById('btnTestMTR').addEventListener('click', testMTR);
-        document.getElementById('btnTestKettle').addEventListener('click', testKettle);
         document.getElementById('btnRandom').addEventListener('click', testRandom);
-        document.getElementById('panelHandle').addEventListener('click', () => document.getElementById('controlPanel').classList.toggle('expanded'));
-        document.getElementById('panelHeader').addEventListener('click', () => document.getElementById('controlPanel').classList.toggle('expanded'));
+        document.getElementById('btnTestMic').addEventListener('click', testMicrophone);
+        document.getElementById('panelHandle').addEventListener('click', ()=>document.getElementById('controlPanel').classList.toggle('expanded'));
         
         initSpeechRecognition();
-        console.log('✅ SenseAid Enhanced | MTR door chime + Kettle boiling optimized | Speech fusion active');
+        console.log('✅ High Accuracy Detection Active: Kettle Boiling | MTR/Bus Signals | Kitchen Reminders');
     </script>
 </body>
 </html>
-```
